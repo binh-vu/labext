@@ -1,3 +1,5 @@
+import os
+import site
 from typing import List
 
 from IPython.core.display import display, Javascript
@@ -23,23 +25,28 @@ IPywidgetLibs = {
     "local": {
         DataTable: {
             "js": "/static/components/ipywidgets_extra_libs/js/jquery.dataTables.min",
-            "css": "/static/components/ipywidgets_extra_libs/js/jquery.dataTables.min"
+            "css": "/static/components/ipywidgets_extra_libs/css/jquery.dataTables.min.css"
         },
         JQuery: {
             "js": '/static/components/jquery/jquery.min'
         },
         Selectize: {
-            "js": "/static/components/ipywidgets_extra_libs/js/selectize.min",
-            "css": "//selectize.github.io/selectize.js/css/selectize.default.css"
+            "js": "/static/components/ipywidgets_extra_libs/js/selectize",
+            "css": "/static/components/ipywidgets_extra_libs/css/selectize.default.css"
         },
     }
 }
 
 REGISTERED_MODULES = set()
+# global arguments for method called automatically in each module.
+# for example, setting `escape_html` to be False allow pandas.DataFrame to not escape html
+GlobalModulesArgs = {
+    "escape_html": True
+}
 
 
-def register(modules: List[str], auto_use_local: bool=True):
-    global IPywidgetLibs, REGISTERED_MODULES
+def register(modules: List[str], auto_use_local: bool=True, force_local: bool=False):
+    global IPywidgetLibs, REGISTERED_MODULES, GlobalModulesArgs
 
     # not filtered the modules because we need to output the same code
     # modules = [m for m in modules if m not in REGISTERED_MODULES]
@@ -47,7 +54,17 @@ def register(modules: List[str], auto_use_local: bool=True):
         modules.append(JQuery)
     REGISTERED_MODULES.update(modules)
 
-    location = "remote"
+    location = "remote" if not force_local else "local"
+    if auto_use_local and not force_local:
+        if hasattr(site, "getsitepackages"):
+            for p in site.getsitepackages():
+                if os.path.exists(os.path.join(p, "notebook/static/components/ipywidgets_extra_libs")):
+                    location = "local"
+                    break
+        elif os.environ.get("ANACONDA_HOME", None) is not None:
+            if os.path.exists(os.path.join(os.environ["ANACONDA_HOME"], "lib/python3.7/site-packages/notebook/static/components/ipywidgets_extra_libs")):
+                location = "local"
+
     module_urls = [
         f"{m}: \"{IPywidgetLibs[location][m]['js']}\""
         for m in modules
@@ -61,29 +78,29 @@ def register(modules: List[str], auto_use_local: bool=True):
     for m in modules:
         if 'css' in IPywidgetLibs[location][m]:
             request_css.append(f"""
-if ($("head link#{m}-css-fds82j1").length == 0) {{
-    $('head').append('<link rel="stylesheet" id="{m}-css-fds82j1" type="text/css" href="{IPywidgetLibs[location][m]['css']}" />');
-}}
+            if ($("head link#{m}-css-fds82j1").length == 0) {{
+                $('head').append('<link rel="stylesheet" id="{m}-css-fds82j1" type="text/css" href="{IPywidgetLibs[location][m]['css']}" />');
+            }}
             """)
             request_modules.append(m)
 
     if len(request_css) > 0:
         request_css = '\n'.join(request_css)
         js += f"""
-require([{', '.join(['"' + m + '"' for m in request_modules])}], function ({', '.join(request_modules)}) {{
-    {request_css}
-}});
+        require([{', '.join(['"' + m + '"' for m in request_modules])}], function ({', '.join(request_modules)}) {{
+            {request_css}
+        }});
         """
 
     js += """
-function __CallUntilReturnTrue_BV12__(fn, timeout) {
-    setTimeout(function () {
-        if (!fn()) {
-            __CallUntilReturnTrue_BV12__(fn, timeout);
-        }
-    }, timeout);
-}
-window.__CallUntilReturnTrue_BV12__ = __CallUntilReturnTrue_BV12__
+    function __CallUntilReturnTrue_BV12__(fn, timeout) {
+        setTimeout(function () {
+            if (!fn()) {
+                __CallUntilReturnTrue_BV12__(fn, timeout);
+            }
+        }, timeout);
+    }
+    window.__CallUntilReturnTrue_BV12__ = __CallUntilReturnTrue_BV12__
     """
     display(Javascript(js))
 
@@ -97,7 +114,7 @@ window.__CallUntilReturnTrue_BV12__ = __CallUntilReturnTrue_BV12__
 
             # create table DOM
             script = (
-                f'$(element).html(`{self.to_html(index=True, classes=classes, border=0, justify="left")}`);\n'
+                f'$(element).html(`{self.to_html(index=True, classes=classes, escape=GlobalModulesArgs['escape_html'], border=0, justify="left")}`);\n'
             )
 
             # execute jQuery to turn table into DataTable

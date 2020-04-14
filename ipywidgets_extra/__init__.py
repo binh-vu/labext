@@ -1,3 +1,4 @@
-from .selection import Selection
+from .selection import *
 import ipywidgets_extra.modules as M
-from .interactive import interactive_slider
+from .interactive import *
+from .layout import *

@@ -67,13 +67,13 @@ class RecordedSelection:
         self.recorded_data = recorded_data
         self.options = options
         self.key = key
-        self.selection = Selection(
+        self.widget = Selection(
             options=[(x, i) for i, x in enumerate(options)],
             value=self.recorded_data.get(self.key, 0),
             description=label,
             disabled=False,
         )
-        self.selection.widget.observe(self.update, names='value')
+        self.widget.widget.observe(self.update, names='value')
 
     def update(self, change):
         self.recorded_data[self.key] = change['new']
@@ -83,5 +83,5 @@ class RecordedSelection:
         return self
 
     def sync_value(self):
-        self.selection.value = self.recorded_data.get(self.key, 0)
+        self.widget.value = self.recorded_data.get(self.key, 0)
         return self
