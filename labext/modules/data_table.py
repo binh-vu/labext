@@ -67,6 +67,3 @@ require(["{cls.id()}", "{JQuery.id()}"], function(dataTables, jquery) {{
         for static_file in ["sort_asc.png", "sort_both.png"]:
             with open(os.path.join(localdir, "images", static_file), "wb") as f:
                 f.write(requests.get(f"https://cdn.datatables.net/1.10.19/images/{static_file}").content)
-
-
-DataTable.register()

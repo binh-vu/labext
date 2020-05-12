@@ -41,6 +41,12 @@ class Module(ABC):
         return [v for k, v in sorted(deps.items(), key=itemgetter(0))]
 
     @classmethod
+    def expose(cls, varname: str):
+        """Expose the module to global scope"""
+        jscode = f"require(['{cls.id()}'], function ({cls.id()}) {{ window.{varname} = {cls.id()} }});"
+        display(Javascript(jscode))
+
+    @classmethod
     def register(cls, use_local: bool = True):
         """Register a module to the current notebook. This function is safed to call repeatedly"""
         if use_local:
