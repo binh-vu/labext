@@ -1,5 +1,5 @@
 import json
-import json
+import shutil
 import os
 from abc import ABC
 from operator import itemgetter
@@ -135,3 +135,13 @@ class Module(ABC):
 
             cls.remap_urls[url] = f"/custom/labext/{cls.id()}/css/{filename}"
         return localdir
+
+    @classmethod
+    def clear_download(cls):
+        localdir = os.path.join(jupyter_config_dir(), "custom", "labext", cls.id())
+        localdir = Path(localdir)
+        if Path(localdir / "js").exists():
+            shutil.rmtree(os.path.join(localdir, "js"))
+
+        if Path(localdir / "css").exists():
+            shutil.rmtree(os.path.join(localdir, "css"))

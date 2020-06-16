@@ -1,3 +1,4 @@
+import json
 from typing import List, Dict, Tuple, Callable, Any, Optional, Type
 
 from IPython.core.display import display, Javascript
@@ -16,6 +17,14 @@ class Tippy(Module):
 
         >>> Tippy.render()
     """
+    # Properties that can be set: https://atomiks.github.io/tippyjs/v6/all-props/#interactive
+    args = {}
+    ser_args = "{}"
+
+    @classmethod
+    def set_args(cls, **kwargs):
+        cls.args.update(**kwargs)
+        cls.ser_args = json.dumps(cls.args)
 
     @classmethod
     def id(cls) -> str:
@@ -23,7 +32,7 @@ class Tippy(Module):
 
     @classmethod
     def css(cls) -> List[str]:
-        return ["https://unpkg.com/tippy.js@6.2.3/dist/tippy.css"]
+        return ["https://unpkg.com/tippy.js@6.2.3/dist/tippy.css", "https://unpkg.com/tippy.js@6.2.3/themes/light.css"]
 
     @classmethod
     def js(cls) -> Dict[str, str]:
@@ -37,6 +46,6 @@ class Tippy(Module):
     def render(cls):
         jscode = """
 require(["@popperjs/core", "tippy"], function (popper, tippy) {
-    tippy('[data-tippy-content]');
-});"""
+    tippy("[data-tippy-content]", %s);
+});""" % cls.ser_args
         display(Javascript(jscode))
