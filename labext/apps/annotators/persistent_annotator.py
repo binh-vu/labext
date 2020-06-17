@@ -3,15 +3,32 @@ import logging
 import os
 from typing import List, Dict, Tuple, Optional
 
-from labext.interactive_funcs.interactive_labelers.interactive_labeler import InteractiveLabeler, Example
+from labext.apps.annotators.base_annotator import Annotator, Example
+import ipywidgets.widgets as widgets
 
 
-class PersistentInteractiveLabeler(InteractiveLabeler):
-    logger = logging.getLogger("labext.interactive.persistent_labeler")
+class PersistentAnnotator(Annotator):
+    logger = logging.getLogger("labext.apps.annotators.persistent_annotator")
 
     def __init__(self, output_file: str, examples: List[Example], class_ids: List[str]):
         assert {l is not None and l != "" and l.strip() == l for l in class_ids}
         super().__init__()
+        # setup the UI
+        self.el_clear_btn = widgets.Button(
+            description='Clear',
+            disabled=False,
+            button_style='',
+            icon='eraser'
+        )
+        self.el_clear_btn.layout.margin = "0 0 0 8px"
+        self.el_clear_btn.on_click(self.on_clear)
+        self.el_root_children = (
+            widgets.HBox([self.el_prev_btn, self.el_next_btn, self.el_clear_btn, self.el_monitorbox]),
+            self.el_example_container
+        )
+
+        # setup the data
+        self.current_index = 0
         self.examples = examples
         self.class_ids = class_ids
 
@@ -75,3 +92,25 @@ class PersistentInteractiveLabeler(InteractiveLabeler):
 
     def has_label(self, example_id) -> bool:
         return example_id in self.labeled_examples
+
+    def on_clear(self, btn):
+        self.current_index = 0
+        self.examples = [e for e in self.examples if e.id not in self.labeled_examples]
+        self.render_example()
+
+    def next(self):
+        self.current_index += 1
+
+    def prev(self):
+        self.current_index -= 1
+
+    def has_next(self):
+        return self.current_index + 1 < len(self.examples)
+
+    def has_prev(self):
+        return self.current_index > 0
+
+    def render_example(self):
+        with self.el_example_container:
+            self.el_example_container.clear_output()
+            self.examples[self.current_index].render()
