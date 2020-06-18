@@ -27,7 +27,7 @@ class MultichoiceBatchAnnotator(PersistentAnnotator):
             description='Default choice:',
             style={'description_width': 'initial'}
         )
-        self.el_default_choice.layout.margin = "-1px 0 0 8px"
+        self.el_default_choice.layout.margin = "0 0 0 8px"
         self.el_default_choice.observe(self.on_default_choice_change, names='value')
 
         self.el_root_children = (
