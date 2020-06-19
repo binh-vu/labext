@@ -1,5 +1,4 @@
-from collections import Callable
-from typing import Any
+from typing import Any, Callable
 
 import ipywidgets.widgets as widgets
 from IPython.core.display import display
@@ -13,7 +12,9 @@ def slider(fn: Callable[[int], Any], min=0, max=10, step=1) -> None:
     fn: Callable[[int], Any]
         a rendering function that render the item at a given position in the list
     min: int
+        the start range of this slider
     max: int
+        the stop range of this (inclusive)
     step: int
     """
 

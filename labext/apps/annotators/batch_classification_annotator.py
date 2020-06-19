@@ -1,3 +1,4 @@
+import math
 from typing import List, Tuple, Optional
 from uuid import uuid4
 
@@ -8,12 +9,30 @@ from labext.apps.annotators.base_annotator import Example
 from labext.apps.annotators.persistent_annotator import PersistentAnnotator
 
 
-class MultichoiceBatchAnnotator(PersistentAnnotator):
+class BatchClassificationAnnotator(PersistentAnnotator[str]):
+    """An annotator that shows multiple examples per page, each example belongs to one of N different classes.
     """
 
-    """
-    def __init__(self, output_file: str, examples: List[Example], class_ids: List[str], classes: List[str]=None, batch_size: int=5):
-        super().__init__(output_file, examples, class_ids)
+    def __init__(self, output_file: str, examples: List[Example], class_ids: List[str], classes: Optional[List[str]]=None, batch_size: int=5):
+        """
+        Parameters
+        ----------
+        output_file: str
+            the journal (output) file that the labeled information is stored
+        examples: List[Example]
+            list of examples that we need to annotate
+        class_ids: List[str]
+            list of classes' ids
+        classes: Optional[List[str]]
+            labels of classes, default to be the classes' ids
+        batch_size: int
+            number of examples per page.
+        """
+        assert all(l is not None and l != "" and l.strip() == l
+                   for l in class_ids), "Invalid class id, they should be not null, " \
+                                        "not empty and do not contain any head or tail extra spaces"
+
+        super().__init__(output_file, examples)
         classes = classes or class_ids
 
         # setup the UI
@@ -42,12 +61,12 @@ class MultichoiceBatchAnnotator(PersistentAnnotator):
         # bi, ci => ()
         self.keys = {
             (bi, ci): f"{modifier}{c}"
-            for bi, c in enumerate("1234567890qwertyuiopasdfghjklzxcvbnm")
+            for bi, c in enumerate("1234567890qwertyuiopasdfghjklzxcvm")
             for ci, modifier in enumerate(["", "ctrl-", "meta-"])
         }
         self.reverse_keys = {
             (c, ctrlKey, metaKey): (bi, ci)
-            for bi, c in enumerate("1234567890qwertyuiopasdfghjklzxcvbnm")
+            for bi, c in enumerate("1234567890qwertyuiopasdfghjklzxcvm")
             for ci, (ctrlKey, metaKey) in enumerate([(False, False), (True, False), (False, True)])
         }
         self.el_btns_lst_index = {}
@@ -78,8 +97,9 @@ class MultichoiceBatchAnnotator(PersistentAnnotator):
             self.el_view.append(row)
 
         # variable to compute the current status
-        self.original_examples = examples
+        self.n_examples = len(examples)
         self.classes = classes
+        self.class_ids = class_ids
         self.batch_size = batch_size
         self.current_index = 0
         self.default_choice = None if self.el_default_choice.value == self.no_class_id else self.el_default_choice.value
@@ -136,10 +156,18 @@ class MultichoiceBatchAnnotator(PersistentAnnotator):
         self.update_status()
 
     def update_status(self):
-        n_discard_examples = len(self.original_examples) - len(self.examples)
-        n_labeled = len(self.labeled_examples) - n_discard_examples
+        n_discard_examples = self.n_examples - len(self.examples)
+        n_labeled = self.no_labeled_examples() - n_discard_examples
         n_examples = len(self.examples)
-        self.el_view[0].value = f"<b>Current batch</b>: {self.current_index}. <b>Progress</b>: {round(n_labeled * 100 / n_examples, 2)}% ({n_labeled} / {n_examples})"
+        self.el_view[0].value = f"<b>Current batch</b>: {self.current_index} / {math.ceil(n_examples / self.batch_size)}. <b>Progress</b>: {round(n_labeled * 100 / max(n_examples, 1), 2)}% ({n_labeled} / {n_examples})"
+
+    def on_clear(self, _btn: widgets.Button) -> None:
+        # somehow calling super does not work
+        self.current_index = 0
+        self.examples = [e for e in self.examples if e.id not in self.labeled_examples]
+        self.render_example()
+        self.sync_navigator()
+        self.update_status()
 
     def click(self, btn):
         """A button is clicked, we need to figure out the class of that example"""
@@ -192,11 +220,11 @@ class MultichoiceBatchAnnotator(PersistentAnnotator):
         changes = []
         for example_index, class_id in labels:
             example_id = self.examples[example_index].id
-            if example_id in self.labeled_examples and self.labeled_examples[example_id] == class_id and not toggle:
+            if self.has_label(example_id) and self.get_label(example_id) == class_id and not toggle:
                 continue
 
             bi = example_index - self.current_index
-            if self.labeled_examples.get(example_id, None) == class_id:
+            if self.has_label(example_id) and self.get_label(example_id) == class_id:
                 if not toggle:
                     continue
 
@@ -215,3 +243,9 @@ class MultichoiceBatchAnnotator(PersistentAnnotator):
                 changes.append((example_id, class_id))
         self.persist_changes(changes)
         self.update_status()
+
+    def serialize_label(self, label: str) -> str:
+        return label
+
+    def deserialize_label(self, ser_label: str) -> str:
+        return ser_label

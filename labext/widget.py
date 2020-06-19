@@ -13,8 +13,8 @@ class WidgetWrapper(ABC):
     def widget(self):
         pass
 
-    @property
-    def required_modules(self) -> List[Type[Module]]:
+    @staticmethod
+    def required_modules() -> List[Type[Module]]:
         return []
 
     def display(self):

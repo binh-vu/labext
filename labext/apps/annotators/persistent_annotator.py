@@ -1,13 +1,17 @@
 import csv
 import logging
 import os
-from typing import List, Dict, Tuple, Optional
+from abc import abstractmethod
+from typing import List, Dict, Tuple, Optional, Generic, TypeVar
 
 from labext.apps.annotators.base_annotator import Annotator, Example
 import ipywidgets.widgets as widgets
 
 
-class PersistentAnnotator(Annotator):
+Label = TypeVar("Label")
+
+
+class PersistentAnnotator(Annotator, Generic[Label]):
     """An abstract annotator that stores the annotation result to disk.
 
     To prevent loss, all changes are flush to disk immediately. To make it efficient,
@@ -18,7 +22,7 @@ class PersistentAnnotator(Annotator):
 
     logger = logging.getLogger("labext.apps.annotators.persistent_annotator")
 
-    def __init__(self, output_file: str, examples: List[Example], class_ids: List[str]):
+    def __init__(self, output_file: str, examples: List[Example]):
         """
         Parameters
         ----------
@@ -26,13 +30,7 @@ class PersistentAnnotator(Annotator):
             the journal (output) file that the labeled information is stored
         examples: List[Example]
             list of examples that we need to annotate
-        class_ids: List[str]
-            list of classes that we want to tag each example with. Each example is tagged with
-            only one class.
         """
-        assert all(l is not None and l != "" and l.strip() == l
-                   for l in class_ids), "Invalid class id, they should be not null, " \
-                                        "not empty and do not contain any head or tail extra spaces"
         super().__init__()
 
         # update the UI
@@ -55,15 +53,13 @@ class PersistentAnnotator(Annotator):
         # now setup the data
         # list of examples
         self.examples = examples
-        # classes that will be tagged with each example
-        self.class_ids = class_ids
         # index of the currrent example
         self.current_index = 0
 
-        # store labeled data: example_id => class_id
-        self.labeled_examples: Dict[str, str] = {}
+        # store labeled data: example_id => label.
+        self.labeled_examples: Dict[str, Label] = {}
         # output file
-        self.output_file = output_file
+        self._output_file = output_file
 
         if os.path.exists(output_file):
             self.logger.debug("Load output file...")
@@ -71,20 +67,19 @@ class PersistentAnnotator(Annotator):
                 reader = csv.reader(f, delimiter='\t')
                 n_changes = 0
                 del_examples = set()
-                set_class_ids = set(class_ids)
 
-                for example_id, class_id in reader:
-                    if class_id == "":
-                        class_id = None
+                for example_id, label in reader:
+                    if label == "":
+                        label = None
                     else:
-                        assert class_id in set_class_ids
+                        label = self.deserialize_label(label)
 
                     if example_id in self.labeled_examples:
                         n_changes += 1
 
-                    self.labeled_examples[example_id] = class_id
+                    self.labeled_examples[example_id] = label
 
-                    if class_id is None:
+                    if label is None:
                         del_examples.add(example_id)
                     elif example_id in del_examples:
                         del_examples.remove(example_id)
@@ -99,37 +94,46 @@ class PersistentAnnotator(Annotator):
                 self.optimize_journal_file()
             self.logger.debug("Finish loading output file...")
 
-    def persist_changes(self, changes: List[Tuple[str, Optional[str]]]) -> None:
+    def persist_changes(self, changes: List[Tuple[str, Optional[Label]]]) -> None:
         """Persist the changes to the disk.
 
         Parameters
         ----------
         changes: List[Tuple[str, Optional[str]]]
-            List of changes, each change is a pair of (`example_id`, and `class_id`).
-            To delete a label of an example, set `class_id` to None
+            List of changes, each change is a pair of (`example_id`, and `label`).
+            To delete a label of an example, set `label` to None
         """
-        with open(self.output_file, "a") as f:
+        with open(self._output_file, "a") as f:
             writer = csv.writer(f, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
-            for example_id, class_id in changes:
-                if class_id is None:
+            for example_id, label in changes:
+                if label is None:
                     del self.labeled_examples[example_id]
                 else:
-                    self.labeled_examples[example_id] = class_id
-                writer.writerow([example_id, class_id])
+                    self.labeled_examples[example_id] = label
+                writer.writerow([example_id, self.serialize_label(label)])
 
     def optimize_journal_file(self):
         """Optimize the journal (output) file.
         """
-        with open(self.output_file + ".tmp", "w") as f:
+        with open(self._output_file + ".tmp", "w") as f:
             writer = csv.writer(f, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
-            for example_id, class_id in self.labeled_examples.items():
-                writer.writerow([example_id, class_id])
+            for example_id, label in self.labeled_examples.items():
+                writer.writerow([example_id, self.serialize_label(label)])
 
-        os.rename(self.output_file, self.output_file + ".backup")
-        os.rename(self.output_file + ".tmp", self.output_file)
-        os.remove(self.output_file + ".backup")
+        os.rename(self._output_file, self._output_file + ".backup")
+        os.rename(self._output_file + ".tmp", self._output_file)
+        os.remove(self._output_file + ".backup")
 
-    def get_label(self, example_id: str) -> str:
+    def no_labeled_examples(self) -> int:
+        """Get the number of examples that has been annotated
+
+        Returns
+        -------
+        int
+        """
+        return len(self.labeled_examples)
+
+    def get_label(self, example_id: str) -> Label:
         """Get label of this example
 
         Parameters
@@ -139,7 +143,7 @@ class PersistentAnnotator(Annotator):
         Returns
         -------
         str
-            the label (i.e., `class_id`) associated with the example
+            the label (i.e., `label`) associated with the example
         """
         return self.labeled_examples[example_id]
 
@@ -185,3 +189,33 @@ class PersistentAnnotator(Annotator):
         with self.el_example_container:
             self.el_example_container.clear_output()
             self.examples[self.current_index].render()
+
+    @abstractmethod
+    def serialize_label(self, label: Label) -> str:
+        """Serialize the label to string in order to save it to disk. The function must not return an empty string as it
+        is reserved for null value
+
+        Parameters
+        ----------
+        label: Label
+
+        Returns
+        -------
+        str
+            the serialized string, must not be empty
+        """
+        pass
+
+    @abstractmethod
+    def deserialize_label(self, ser_label: str) -> Label:
+        """Deserialize the label
+
+        Parameters
+        ----------
+        ser_label: str
+
+        Returns
+        -------
+        Label
+        """
+        pass

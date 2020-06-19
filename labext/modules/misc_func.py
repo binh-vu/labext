@@ -25,6 +25,7 @@ class MiscFunc(Module):
     def dependencies(cls) -> List[Type['Module']]:
         return []
 
+    @classmethod
     def register(cls, use_local: bool = True):
         jscode = f"""
 if (window.{cls.call_until_return_true} === undefined) {{

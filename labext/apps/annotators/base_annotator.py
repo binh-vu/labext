@@ -44,8 +44,6 @@ class Annotator(ABC):
 
         self.el_prev_btn.layout.margin = "0px 0 0 0"
         self.el_next_btn.layout.margin = "0px 0 0 8px"
-        self.el_prev_btn.disabled = True  # `not self.has_prev()` cannot do this as we haven't setup information for this yet.
-        self.el_next_btn.disabled = False  # not self.has_next()
 
         self.el_next_btn.on_click(self.on_navigate)
         self.el_prev_btn.on_click(self.on_navigate)
@@ -108,6 +106,7 @@ class Annotator(ABC):
             display(*self.el_root_children)
 
         display(self.el_root)
+        self.sync_navigator()
         self.render_example()
 
     def on_mouse_key_event(self, event: dict):
@@ -158,15 +157,19 @@ class Annotator(ABC):
             if self.has_next():
                 re_render = True
                 self.next()
-                self.el_prev_btn.disabled = not self.has_prev()
-                self.el_next_btn.disabled = not self.has_next()
+                self.sync_navigator()
         else:
             # move to previous example
             if self.has_prev():
                 re_render = True
                 self.prev()
-                self.el_prev_btn.disabled = not self.has_prev()
-                self.el_next_btn.disabled = not self.has_next()
+                self.sync_navigator()
 
         if re_render:
             self.render_example()
+
+    def sync_navigator(self):
+        """Synchronize the navigating buttons with the current data
+        """
+        self.el_prev_btn.disabled = not self.has_prev()
+        self.el_next_btn.disabled = not self.has_next()

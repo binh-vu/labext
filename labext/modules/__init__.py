@@ -5,6 +5,6 @@ from .selectize import *
 from .tippy import *
 
 
-def registers(modules: List[Type[Module]]):
+def register(modules: List[Type[Module]]):
     for m in modules:
         m.register()

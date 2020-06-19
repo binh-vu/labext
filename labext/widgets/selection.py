@@ -18,8 +18,8 @@ class Selection(WidgetWrapper):
     def widget(self):
         return self._widget
 
-    @property
-    def required_modules(self):
+    @staticmethod
+    def required_modules():
         return [JQuery, Selectize, MiscFunc]
 
     def sync(self, fix_overflow: bool = True):
