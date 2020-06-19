@@ -50,4 +50,16 @@ pip install -U labext
 
 ## Usage
 
-See [Demo](./demo.ipynb) notebook for how to use the library.
+See the [Demo](./demo.ipynb) notebook for how to use the library. Demo:
+
+1. Converting DataFrame to DataTable
+<br/>![DataTable](./assets/datatable.gif)
+
+2. Pop-over (Tippy)
+<br/>![Tippy](./assets/tippy.gif)
+
+3. Slider
+<br/>![Slider](./assets/slider.gif)
+
+4. Annotator 
+<br/>![Annotator](./assets/annotator.gif)
