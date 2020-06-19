@@ -1,21 +1,20 @@
-from typing import List, Dict, Tuple, Optional
+from typing import List, Tuple, Optional
 from uuid import uuid4
 
-from IPython.core.display import display
-from ipyevents import Event
 import ipywidgets.widgets as widgets
+from IPython.core.display import display
 
-from labext.apps.annotators.persistent_annotator import PersistentAnnotator
 from labext.apps.annotators.base_annotator import Example
+from labext.apps.annotators.persistent_annotator import PersistentAnnotator
+
 
 class MultichoiceBatchAnnotator(PersistentAnnotator):
+    """
 
+    """
     def __init__(self, output_file: str, examples: List[Example], class_ids: List[str], classes: List[str]=None, batch_size: int=5):
-        assert len(class_ids) <= 4, "This labeler does not support more than 4 classes"
-        assert batch_size <= 9, "This labeler does not support labeling more than 9 examples simultaneously"
-        classes = classes or class_ids
-
         super().__init__(output_file, examples, class_ids)
+        classes = classes or class_ids
 
         # setup the UI
         self.no_class_id = str(uuid4())
@@ -31,7 +30,7 @@ class MultichoiceBatchAnnotator(PersistentAnnotator):
         self.el_default_choice.observe(self.on_default_choice_change, names='value')
 
         self.el_root_children = (
-            widgets.HBox([self.el_prev_btn, self.el_next_btn, self.el_clear_btn, self.el_default_choice, self.el_monitorbox]),
+            widgets.HBox([self.el_prev_btn, self.el_next_btn, self.el_clear_btn, self.el_default_choice, self.el_status_box]),
             self.el_example_container
         )
 

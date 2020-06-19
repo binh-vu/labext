@@ -1,23 +1,41 @@
+from collections import Callable
+from typing import Any
+
 import ipywidgets.widgets as widgets
 from IPython.core.display import display
 
 
-def interactive_slider(fn, min=0, max=10, step=1):
-    next_btn = widgets.Button(
-        description='Next',
-        disabled=False,
-        button_style='',
-        icon='arrow-circle-right'  # (FontAwesome names without the `fa-` prefix)
-    )
+def slider(fn: Callable[[int], Any], min=0, max=10, step=1) -> None:
+    """Interactive slider. Useful for navigating a list of items/entities/tables
+
+    Parameters
+    ----------
+    fn: Callable[[int], Any]
+        a rendering function that render the item at a given position in the list
+    min: int
+    max: int
+    step: int
+    """
+
+    # define navigating buttons and slider
     prev_btn = widgets.Button(
         description='Previous',
         disabled=False,
         button_style='',
         icon='arrow-circle-left'  # (FontAwesome names without the `fa-` prefix)
     )
-    space = widgets.HTML(value="<span style='margin-left: 8px' />")
+    next_btn = widgets.Button(
+        description='Next',
+        disabled=False,
+        button_style='',
+        icon='arrow-circle-right'  # (FontAwesome names without the `fa-` prefix)
+    )
+    next_btn.layout.margin = "0 0 0 8px"
+
     slider = widgets.IntSlider(value=min, min=min, max=max, step=step, continuous_update=False)
-    container = widgets.HBox([prev_btn, space, next_btn, space, slider])
+    slider.layout.margin = "0 0 0 8px"
+
+    container = widgets.HBox([prev_btn, next_btn, slider])
     output = widgets.Output()
 
     display(container, output)

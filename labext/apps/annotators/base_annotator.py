@@ -1,29 +1,34 @@
-import logging
-import os, csv
 from abc import ABC, abstractmethod
-from typing import List, Dict, Tuple, Optional
 
+import ipywidgets.widgets as widgets
 from IPython.core.display import display
 from ipyevents import Event
-import ipywidgets.widgets as widgets
 
 
 class Example(ABC):
+    """An abstract class representing examples that will be annotated.
+    """
 
     def render(self):
-        """Rendering the example"""
+        """Rendering the example. Override this function to render the example in the way you want"""
         display(widgets.Label(value=str(self)))
 
     @property
     @abstractmethod
     def id(self) -> str:
+        """Get id of this example"""
         pass
 
 
 class Annotator(ABC):
+    """Base annotator, provides basic functions to navigate examples and keyboard shortcuts
+    """
 
     def __init__(self):
+        # container for displaying example
         self.el_example_container = widgets.Output()
+
+        # navigation buttons
         self.el_next_btn = widgets.Button(
             description='Next (n)',
             disabled=False,
@@ -39,31 +44,31 @@ class Annotator(ABC):
 
         self.el_prev_btn.layout.margin = "0px 0 0 0"
         self.el_next_btn.layout.margin = "0px 0 0 8px"
-
-        self.el_prev_btn.disabled = True # `not self.has_prev()` cannot do this as we haven't setup information for this yet.
-        self.el_next_btn.disabled = False # not self.has_next()
-
-        self.el_monitorbox = widgets.HTML(
-            value='Keyboard Interaction: <span style="color: #d24829"><b>inactive</b></span> (mouse hover to activate)')
-        self.el_monitorbox.layout.margin = "0 0 0 8px"
+        self.el_prev_btn.disabled = True  # `not self.has_prev()` cannot do this as we haven't setup information for this yet.
+        self.el_next_btn.disabled = False  # not self.has_next()
 
         self.el_next_btn.on_click(self.on_navigate)
         self.el_prev_btn.on_click(self.on_navigate)
 
+        # status box telling if keyboard shortcut is activated
+        self.el_status_box = widgets.HTML(
+            value='Keyboard Interaction: <span style="color: #d24829"><b>inactive</b></span> (mouse hover to activate)')
+        self.el_status_box.layout.margin = "0 0 0 8px"
+
+        # now define the DOM tree for the annotator
+        # root is the top component
         self.el_root = widgets.Output()
         self.el_root.layout.border = '1px solid #d24829'
         self.el_root.layout.padding = '2px'
         self.el_root.layout.margin = "0 0 0 -2px"
 
         self.el_root_children = (
-            widgets.HBox([self.el_prev_btn, self.el_next_btn, self.el_monitorbox]),
+            widgets.HBox([self.el_prev_btn, self.el_next_btn, self.el_status_box]),
             self.el_example_container
         )
 
-        # keyboard listener
+        # add keyboard listener
         self.event_listener = Event(source=self.el_root, watched_events=['keydown', 'mouseenter', 'mouseleave'])
-
-        # register the event
         self.event_listener.on_dom_event(self.on_mouse_key_event)
 
     @abstractmethod
@@ -97,27 +102,33 @@ class Annotator(ABC):
         pass
 
     def render(self):
-        """Render the labeler"""
-        # display the app
+        """Render this annotator. This method should only be called once"""
         with self.el_root:
             self.el_root.clear_output()
             display(*self.el_root_children)
 
         display(self.el_root)
-        # render the example
         self.render_example()
 
     def on_mouse_key_event(self, event: dict):
+        """Handling keyboard and mouse events to support keyboard shortcut
+
+        Parameters
+        ----------
+        event: dict
+            the event fired from ipyevents
+        """
         if event['type'] == 'mouseenter' or event['type'] == 'mouseleave':
+            # update the status box to show that keyboard capturing is activated when mouse is over the annotator component
             is_monitorbox_active = event['type'] == 'mouseenter'
             if is_monitorbox_active:
-                self.el_monitorbox.value = 'Keyboard Interaction: <span style="color: #79b549"><b>active</b></span> (mouse leave to deactivate)'
+                self.el_status_box.value = 'Keyboard Interaction: <span style="color: #79b549"><b>active</b></span> (mouse leave to deactivate)'
                 self.el_root.layout.border = '1px solid #79b549'
             else:
-                self.el_monitorbox.value = 'Keyboard Interaction: <span style="color: #d24829"><b>inactive</b></span> (mouse enter to activate)'
+                self.el_status_box.value = 'Keyboard Interaction: <span style="color: #d24829"><b>inactive</b></span> (mouse enter to activate)'
                 self.el_root.layout.border = '1px solid #d24829'
         else:
-            # keydown event
+            # handling keyboard event
             key = event['key']
             re_render = False
             if key == 'n':
