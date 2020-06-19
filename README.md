@@ -19,6 +19,23 @@ Features:
 2. Pop-over content, allowing to show additional content when hovering over a DOM element. 
 3. Widgets for interactive labeling/annotating data in Jupyter Lab. 
 
+## Usage
+
+See the [Demo](./demo.ipynb) notebook for how to use the library. Demo:
+
+1. Converting DataFrame to DataTable
+<br/>![DataTable](./assets/datatable.gif)
+
+2. Pop-over (Tippy)
+<br/>![Tippy](./assets/tippy.gif)
+
+3. Slider
+<br/>![Slider](./assets/slider.gif)
+
+4. Annotator 
+<br/>![Annotator](./assets/annotator.gif)
+
+
 ## Installation
 
 To use this with JupyterLab, you need to have `requirejs` enable in Jupyter by installing either:
@@ -47,19 +64,3 @@ Finally, install this package directly from `pypi`:
 ```bash
 pip install -U labext
 ``` 
-
-## Usage
-
-See the [Demo](./demo.ipynb) notebook for how to use the library. Demo:
-
-1. Converting DataFrame to DataTable
-<br/>![DataTable](./assets/datatable.gif)
-
-2. Pop-over (Tippy)
-<br/>![Tippy](./assets/tippy.gif)
-
-3. Slider
-<br/>![Slider](./assets/slider.gif)
-
-4. Annotator 
-<br/>![Annotator](./assets/annotator.gif)
