@@ -52,7 +52,9 @@ require(["{cls.id()}", "{JQuery.id()}"], function(dataTables, jquery) {{
     jquery(element).html(`{self.to_html(**cls.args)}`);
     jquery(document).ready( () => {{
         // Turn existing table into datatable
-        jquery(element).find("table.dataframe").DataTable();
+        jquery(element).find("table.dataframe").DataTable({{
+            "lengthMenu": [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]]
+        }});
     }})
 }});"""
             return script

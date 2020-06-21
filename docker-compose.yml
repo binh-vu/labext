@@ -1,0 +1,11 @@
+version: '2.0'
+services:
+  jupyterlab:
+    build: .
+    image: labext
+    ports:
+    - "8888:8888"
+    volumes:
+    - .:/ws
+    working_dir: /ws
+    command: jupyter lab --ip=0.0.0.0 --allow-root

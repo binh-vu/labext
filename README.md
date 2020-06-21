@@ -38,6 +38,14 @@ See the [Demo](./demo.ipynb) notebook for how to use the library. Demo:
 
 ## Installation
 
+### Docker
+
+I provide a [Dockerfile](./Dockerfile) that create a base environment to run this library. To run the [demo](./demo.ipynb) notebook in docker, you can use [docker-compose](./docker-compose.yml) to start a jupyter lab:
+```bash
+docker-compose up
+``` 
+
+### Manual
 To use this with JupyterLab, you need to have `requirejs` enable in Jupyter by installing either:
 
 1. https://github.com/DraTeots/jupyterlab_requirejs (jupyterlab version <= 1.*)
