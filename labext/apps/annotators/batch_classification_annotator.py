@@ -159,7 +159,7 @@ class BatchClassificationAnnotator(PersistentAnnotator[str]):
         n_discard_examples = self.n_examples - len(self.examples)
         n_labeled = self.no_labeled_examples() - n_discard_examples
         n_examples = len(self.examples)
-        self.el_view[0].value = f"<b>Current batch</b>: {self.current_index} / {math.ceil(n_examples / self.batch_size)}. <b>Progress</b>: {round(n_labeled * 100 / max(n_examples, 1), 2)}% ({n_labeled} / {n_examples})"
+        self.el_view[0].value = f"<b>Current batch</b>: {math.ceil(self.current_index / self.batch_size)} / {math.ceil(n_examples / self.batch_size)}. <b>Progress</b>: {round(n_labeled * 100 / max(n_examples, 1), 2)}% ({n_labeled} / {n_examples})"
 
     def on_clear(self, _btn: widgets.Button) -> None:
         # somehow calling super does not work
@@ -202,6 +202,10 @@ class BatchClassificationAnnotator(PersistentAnnotator[str]):
 
     def set_auto_label(self):
         # update default choice change
+        if self.default_choice is None:
+            # we do not have a default choice, so do not attempt to set it
+            return
+
         batch_examples = self.examples[self.current_index:self.current_index + self.batch_size]
         changes = []
         for i, e in enumerate(batch_examples):

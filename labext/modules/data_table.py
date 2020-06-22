@@ -1,4 +1,4 @@
-import os
+import os, json
 from pathlib import Path
 from typing import List, Dict, Type
 
@@ -14,7 +14,8 @@ class DataTable(Module):
         "escape": True,
         "border": 0,
         "justify": "left",
-        "classes": ['table', 'table-striped', 'table-bordered']
+        "classes": ['table', 'table-striped', 'table-bordered'],
+        "length_menu": [10, 25, 50, -1]
     }
 
     @classmethod
@@ -38,8 +39,8 @@ class DataTable(Module):
         return [JQuery]
 
     @classmethod
-    def register(cls):
-        super().register()
+    def register(cls, use_local: bool = True):
+        super().register(use_local)
 
         import pandas as pd
         def _repr_datatable_(self):
@@ -47,13 +48,16 @@ class DataTable(Module):
             # create table DOM
             # script = f'$(element).html(`{self.to_html(**cls.args)}`);\n'
             # execute jQuery to turn table into DataTable
+            html = self.to_html(**{k: v for k, v in cls.args.items() if k != "length_menu"})
+            length_menu = json.dumps([cls.args['length_menu'], ["All" if x == -1 else x for x in cls.args['length_menu']]])
+
             script = f"""
 require(["{cls.id()}", "{JQuery.id()}"], function(dataTables, jquery) {{
-    jquery(element).html(`{self.to_html(**cls.args)}`);
+    jquery(element).html(`{html}`);
     jquery(document).ready( () => {{
         // Turn existing table into datatable
         jquery(element).find("table.dataframe").DataTable({{
-            "lengthMenu": [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]]
+            "lengthMenu": {length_menu}
         }});
     }})
 }});"""

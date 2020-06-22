@@ -51,13 +51,13 @@ class HideableButton(WidgetWrapper):
 
     def _show(self, _btn):
         """Show the content"""
-        self.el_container.layout.visibility = 'visible'
+        self.el_container.layout.display = 'inherit'
         self.el_btn.widget.button_style = 'success'
         self.is_shown = True
 
     def _hide(self, _btn):
         """Hide the content"""
-        self.el_container.layout.visibility = 'hidden'
+        self.el_container.layout.display = 'none'
         self.el_btn.widget.button_style = ''
         self.is_shown = False
 
