@@ -63,4 +63,4 @@ def slider(fn: Callable[[int], Any], min=0, max=10, step=1) -> None:
     slider.observe(on_change, names='value')
 
     with output:
-        fn(0)
+        fn(slider.value)
