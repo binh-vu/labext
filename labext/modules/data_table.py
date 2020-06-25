@@ -32,7 +32,7 @@ class DataTable(Module):
 
     @classmethod
     def css(cls) -> List[str]:
-        return ["//cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css"]
+        return ["//cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css", f"/custom/labext/{cls.id()}/css/jupyter_data_tables.css"]
 
     @classmethod
     def js(cls) -> Dict[str, str]:
@@ -44,6 +44,15 @@ class DataTable(Module):
 
     @classmethod
     def register(cls, use_local: bool = True):
+        localdir = cls.get_local_dir()
+        custom_css_file = localdir / "css/jupyter_data_tables.css"
+        if not custom_css_file.exists():
+            with open(str(custom_css_file), "w") as f:
+                f.write("""
+.jupyter-widgets {
+    overflow: auto !important
+}""")
+
         super().register(use_local)
 
         import pandas as pd
@@ -69,8 +78,8 @@ require(["{cls.id()}", "{JQuery.id()}"], function(dataTables, jquery) {{
     @classmethod
     def download(cls):
         localdir = super().download()
-        (Path(localdir) / "images").mkdir(exist_ok=True)
+        (localdir / "images").mkdir(exist_ok=True)
 
         for static_file in ["sort_asc.png", "sort_both.png"]:
-            with open(os.path.join(localdir, "images", static_file), "wb") as f:
+            with open(str(localdir / "images" / static_file), "wb") as f:
                 f.write(requests.get(f"https://cdn.datatables.net/1.10.19/images/{static_file}").content)

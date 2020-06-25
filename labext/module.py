@@ -102,10 +102,9 @@ class Module(ABC):
     @classmethod
     def download(cls):
         """Download the component in order to make it offline"""
-        localdir = os.path.join(jupyter_config_dir(), "custom", "labext", cls.id())
-        Path(localdir).mkdir(exist_ok=True, parents=True)
-        (Path(localdir) / "js").mkdir(exist_ok=True, parents=True)
-        (Path(localdir) / "css").mkdir(exist_ok=True, parents=True)
+        localdir = cls.get_local_dir()
+        (localdir / "js").mkdir(exist_ok=True, parents=True)
+        (localdir / "css").mkdir(exist_ok=True, parents=True)
 
         cls.remap_urls = {}
         for fileid, url in cls.js().items():
@@ -116,7 +115,7 @@ class Module(ABC):
                 norm_url += ".js"
 
             filename = urlparse(norm_url).path.rsplit("/", 1)[1]
-            filepath = os.path.join(localdir, "js", filename)
+            filepath = str(localdir / "js" / filename)
             if not os.path.exists(filepath):
                 with open(filepath, "wb") as f:
                     f.write(requests.get(norm_url).content)
@@ -128,7 +127,7 @@ class Module(ABC):
             if norm_url.startswith("//"):
                 norm_url = "https:" + norm_url
             filename = urlparse(norm_url).path.rsplit("/", 1)[1]
-            filepath = os.path.join(localdir, "css", filename)
+            filepath = str(localdir / "css" / filename)
             if not os.path.exists(filepath):
                 with open(filepath, "wb") as f:
                     f.write(requests.get(norm_url).content)
@@ -138,10 +137,15 @@ class Module(ABC):
 
     @classmethod
     def clear_download(cls):
+        localdir = cls.get_local_dir()
+        if (localdir / "js").exists():
+            shutil.rmtree(str(localdir / "js"))
+
+        if (localdir / "css").exists():
+            shutil.rmtree(str(localdir / "css"))
+
+    @classmethod
+    def get_local_dir(cls) -> Path:
         localdir = os.path.join(jupyter_config_dir(), "custom", "labext", cls.id())
         localdir = Path(localdir)
-        if Path(localdir / "js").exists():
-            shutil.rmtree(os.path.join(localdir, "js"))
-
-        if Path(localdir / "css").exists():
-            shutil.rmtree(os.path.join(localdir, "css"))
+        return localdir
