@@ -9,18 +9,22 @@ from labext.modules.jquery import JQuery
 
 
 class DataTable(Module):
-    args = {
+    py_args = {
         "index": True,
         "escape": True,
         "border": 0,
         "justify": "left",
         "classes": ['table', 'table-striped', 'table-bordered'],
-        "length_menu": [10, 25, 50, -1]
     }
+    js_args = {}
 
     @classmethod
     def set_args(cls, **kwargs):
-        cls.args.update(**kwargs)
+        cls.py_args.update(**kwargs)
+
+    @classmethod
+    def set_js_args(cls, **kwargs):
+        cls.js_args.update(**kwargs)
 
     @classmethod
     def id(cls) -> str:
@@ -48,17 +52,14 @@ class DataTable(Module):
             # create table DOM
             # script = f'$(element).html(`{self.to_html(**cls.args)}`);\n'
             # execute jQuery to turn table into DataTable
-            html = self.to_html(**{k: v for k, v in cls.args.items() if k != "length_menu"})
-            length_menu = json.dumps([cls.args['length_menu'], ["All" if x == -1 else x for x in cls.args['length_menu']]])
+            html = self.to_html(**cls.py_args)
 
             script = f"""
 require(["{cls.id()}", "{JQuery.id()}"], function(dataTables, jquery) {{
     jquery(element).html(`{html}`);
     jquery(document).ready( () => {{
         // Turn existing table into datatable
-        jquery(element).find("table.dataframe").DataTable({{
-            "lengthMenu": {length_menu}
-        }});
+        jquery(element).find("table.dataframe").DataTable({json.dumps(cls.js_args)});
     }})
 }});"""
             return script
