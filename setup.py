@@ -6,7 +6,7 @@ with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "README.md"),
     long_description = f.read()
 
 setup(name="labext",
-      version='2.1.11',
+      version='2.1.14',
       packages=find_packages(),
       description="Extra widgets for Jupyter Lab",
       long_description=long_description,
@@ -16,5 +16,4 @@ setup(name="labext",
       url="https://github.com/binh-vu/labext",
       python_requires='>3.6',
       license="MIT",
-      install_requires=['ipywidgets', 'IPython', 'jupyter_core', 'requests', 'ipyevents'],
-      package_data={'': ['*.so', '*.pyd']})
+      install_requires=['ipywidgets', 'IPython', 'jupyter_core', 'requests', 'ipyevents'])

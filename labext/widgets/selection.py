@@ -23,6 +23,7 @@ class Selection(WidgetWrapper):
         return [JQuery, Selectize, MiscFunc]
 
     def sync(self, fix_overflow: bool = True):
+        """This function need to called """
         jscode = f"""
 require(["{JQuery.id()}", "{Selectize.id()}"], function ($, _) {{
     {MiscFunc.call_until_return_true}(function () {{
@@ -49,36 +50,7 @@ require(["{JQuery.id()}", "{Selectize.id()}"], function ($, _) {{
 
         return true;
     }}, 100);
-}}
+}});
 """
         display(Javascript(jscode))
 
-
-class RecordedSelection:
-    """
-    Key is the key that we want to select the value
-    Value is the value that we are going to select
-    """
-
-    def __init__(self, recorded_data: dict, key: str, options: List[str], label):
-        self.recorded_data = recorded_data
-        self.options = options
-        self.key = key
-        self.widget = Selection(
-            options=[(x, i) for i, x in enumerate(options)],
-            value=self.recorded_data.get(self.key, 0),
-            description=label,
-            disabled=False,
-        )
-        self.widget.widget.observe(self.update, names='value')
-
-    def update(self, change):
-        self.recorded_data[self.key] = change['new']
-
-    def set_key(self, key):
-        self.key = key
-        return self
-
-    def sync_value(self):
-        self.widget.value = self.recorded_data.get(self.key, 0)
-        return self
