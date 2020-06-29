@@ -59,7 +59,11 @@ require(["{cls.id()}", "{JQuery.id()}"], function(dataTables, jquery) {{
     jquery(element).html(`{html}`);
     jquery(document).ready( () => {{
         // Turn existing table into datatable
-        jquery(element).find("table.dataframe").DataTable({json.dumps(cls.js_args)});
+        let tbl = jquery(element).find("table.dataframe");
+        // fix issue that header & rows not aligned properly when setting scrollX to True 
+        // (the table is center while the header is not)
+        tbl.css('margin', '0px');
+        tbl.DataTable({json.dumps(cls.js_args)});
     }})
 }});"""
             return script

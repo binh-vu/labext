@@ -18,7 +18,8 @@ class Selection(WidgetWrapper):
         self.el_root.add_class(self.el_root_id)
 
         self.version = -1
-        self.value = None
+        # default value is '' (no choice) rather than None to be consistent with the selectize library!
+        self.value: str = ''
 
         self.records = records or []
         self.search_fn = search_fn
