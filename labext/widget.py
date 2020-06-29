@@ -17,8 +17,5 @@ class WidgetWrapper(ABC):
     def required_modules() -> List[Type[Module]]:
         return []
 
-    def display(self):
-        """Should use this method to display the widget instead of directly displaying self.widget"""
-        for m in self.required_modules():
-            m.register()
-        return display(self.widget)
+    def get_auxiliary_components(self, *args) -> list:
+        return []

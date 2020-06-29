@@ -11,7 +11,7 @@ RUN wget https://nodejs.org/dist/v12.18.1/node-v12.18.1-linux-x64.tar.xz && \
 ENV PATH="/opt/node-v12.18.1-linux-x64/bin:${PATH}"
 
 # setup jupyter lab and other dependencies
-RUN pip install -U jupyterlab ipywidgets ipyevents && \
+RUN pip install -U jupyterlab ipywidgets ipyevents ipycallback && \
     jupyter nbextension enable --py widgetsnbextension && \
     jupyter nbextension enable --py --sys-prefix ipyevents && \
     # install requirejs extension
@@ -19,8 +19,8 @@ RUN pip install -U jupyterlab ipywidgets ipyevents && \
     cd jupyterlab_requirejs && \
     npm install && \
     jupyter labextension install && \
-    # enable widgets and ipyevents
-    jupyter labextension install @jupyter-widgets/jupyterlab-manager ipyevents
+    # enable widgets, ipyevents, and ipycallback
+    jupyter labextension install @jupyter-widgets/jupyterlab-manager ipyevents ipycallback
 
 # change the workdir back to root
 WORKDIR /

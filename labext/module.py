@@ -13,7 +13,7 @@ from jupyter_core.paths import jupyter_config_dir
 
 
 class Module(ABC):
-    registered_modules: Dict[str, Type['Module']] = {}
+    registered_modules: Dict[str, bool] = {}
 
     @classmethod
     def id(cls) -> str:

@@ -1,5 +1,8 @@
 twine
 IPython
+ipywidgets
 ipyevents
+ipycallback
 jupyter_core
 requests
+ujson
