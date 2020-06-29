@@ -71,6 +71,6 @@ require(["{cls.id()}", "{JQuery.id()}"], function(dataTables, jquery) {{
         localdir = super().download()
         (localdir / "images").mkdir(exist_ok=True)
 
-        for static_file in ["sort_asc.png", "sort_desc.png", "sort_both.png"]:
+        for static_file in ["sort_asc.png", "sort_both.png"]:
             with open(str(localdir / "images" / static_file), "wb") as f:
                 f.write(requests.get(f"https://cdn.datatables.net/1.10.19/images/{static_file}").content)
