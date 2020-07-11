@@ -11,8 +11,15 @@ from labext.widget import WidgetWrapper
 
 
 class Selection(WidgetWrapper):
-
-    def __init__(self, records: List[dict]=None, item_field: str='text', option_field: str='text', value_field: str='value', search_fields: List[str]=None, search_fn: Callable[[str], List[dict]]=None, layout: dict=None):
+    def __init__(self,
+                 records: List[dict] = None,
+                 item_field: str = 'text',
+                 option_field: str = 'text',
+                 value_field: str = 'value',
+                 search_fields: List[str] = None,
+                 search_fn: Callable[[str], List[dict]] = None,
+                 layout: dict = None,
+                 allow_creation: bool = False):
         self.el_root = widgets.HTML(value='<select></select>', layout=layout or {})
         self.el_root_id = f"selection_{self.el_root.model_id}"
         self.el_root.add_class(self.el_root_id)
@@ -27,10 +34,13 @@ class Selection(WidgetWrapper):
         self.option_field = option_field
         self.value_field = value_field
         self.search_fields = search_fields or [self.item_field]
-
+        self.allow_creation = allow_creation
+        self.on_change_callback = self.default_on_change_cb
         self.el_search_tunnel = SlowTunnelWidget()
         if self.search_fn is not None:
-            assert len(self.records) == 0, "No need to pass the list of records when search function is provided"
+            assert len(
+                self.records
+            ) == 0, "No need to pass the list of records when search function is provided"
             self.records = self.search_fn("")
             self.el_search_tunnel.on_receive(self._handle_search)
 
@@ -53,6 +63,15 @@ class Selection(WidgetWrapper):
         if version > self.version:
             self.version = version
             self.value = value
+            self.on_change_callback(value)
+
+    def get_value(self):
+        return self.value
+
+    def set_value(self, value):
+        self.version += 1
+        self.value = value
+        self.el_value_tunnel.push(self.version, self.value)
 
     def get_auxiliary_components(self):
         selectize_options = """
@@ -60,6 +79,7 @@ class Selection(WidgetWrapper):
             searchField: $searchFields,
             options: $options,
             dropdownParent: 'body',
+            create: $allowCreation,
             onChange: function (value) {
                 window.IPyCallback.get("$valueTunnel").send_msg(value);
             },
@@ -77,7 +97,7 @@ class Selection(WidgetWrapper):
             load: function (query, callback) {
                 // send query
                 let version = window.IPyCallback.get("$searchTunnel").send_msg(query);
-            
+
                 // register the callback to some where
                 window.IPyCallback.get("$searchTunnel").on_receive((return_version, result) => {
                     if (return_version < version) {
@@ -93,7 +113,8 @@ class Selection(WidgetWrapper):
             .substitute(searchTunnel=self.el_search_tunnel.model_id, valueTunnel=self.el_value_tunnel.model_id,
                         valueField=self.value_field, searchFields=ujson.dumps(self.search_fields),
                         itemField=self.item_field, optionField=self.option_field,
-                        options=ujson.dumps(self.records))
+                        options=ujson.dumps(self.records),
+                        allowCreation=str(self.allow_creation).lower())
 
         jscode = Template("""
 require(["$JQueryId", "$SelectizeId"], function (jquery, _) {
@@ -106,12 +127,34 @@ require(["$JQueryId", "$SelectizeId"], function (jquery, _) {
 
         // make it looks beautiful
         jquery('select', $$el).selectize({
-            $selectizeOptions 
+            $selectizeOptions
+        });
+
+        var selectize = jquery('select', $$el)[0].selectize;
+        window.IPyCallback.get("$valueTunnel").on_receive((version, value) => {
+            if (value == "") {
+                selectize.clear(true);
+            } else {
+                selectize.addItem(value, true);
+            }
         });
         return true;
     }, 100);
 });
-""".strip()).substitute(JQueryId=JQuery.id(), SelectizeId=Selectize.id(), uniqueClassId=self.el_root_id,
-                        selectizeOptions=selectize_options, CallUntilTrue=LabExt.call_until_true)
+""".strip()).substitute(JQueryId=JQuery.id(),
+                        SelectizeId=Selectize.id(),
+                        uniqueClassId=self.el_root_id,
+                        selectizeOptions=selectize_options,
+                        valueTunnel=self.el_value_tunnel.model_id,
+                        CallUntilTrue=LabExt.call_until_true)
 
         return [self.el_value_tunnel, self.el_search_tunnel, Javascript(jscode)]
+
+    def default_on_change_cb(self, value: str):
+        pass
+
+    def on_change(self, cb: Callable[[str], None] = None):
+        if cb is None:
+            self.on_change_callback = self.default_on_change_cb
+        else:
+            self.on_change_callback = cb
