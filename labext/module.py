@@ -47,7 +47,7 @@ class Module(ABC):
         display(Javascript(jscode))
 
     @classmethod
-    def register(cls, use_local: bool = True):
+    def register(cls, use_local: bool = True, suppress_display: bool = False):
         """Register a module to the current notebook. This function is safed to call repeatedly"""
         if use_local:
             cls.download()
@@ -91,8 +91,10 @@ class Module(ABC):
                 modules=", ".join(modules),
                 setup_css="\n".join(setup_css))
 
-        display(Javascript(jscode))
+        if not suppress_display:
+            display(Javascript(jscode))
         Module.registered_modules[cls.id()] = True
+        return jscode
 
     @classmethod
     def is_registered(cls):

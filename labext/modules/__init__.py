@@ -6,5 +6,9 @@ from .tippy import *
 
 
 def register(modules: List[Type[Module]]):
+    jscodes = []
     for m in modules:
-        m.register()
+        jscode = m.register(suppress_display=True)
+        jscodes.append(jscode)
+
+    display(Javascript("\n".join(jscodes)))

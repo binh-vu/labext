@@ -104,7 +104,7 @@ class PersistentAnnotator(Annotator, Generic[Label]):
             To delete a label of an example, set `label` to None
         """
         with open(self._output_file, "a") as f:
-            writer = csv.writer(f, delimiter='\t', quoting=csv.QUOTE_MINIMAL)
+            writer = csv.writer(f, delimiter='\t', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
             for example_id, label in changes:
                 if label is None:
                     del self.labeled_examples[example_id]

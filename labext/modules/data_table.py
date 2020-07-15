@@ -43,8 +43,8 @@ class DataTable(Module):
         return [JQuery]
 
     @classmethod
-    def register(cls, use_local: bool = True):
-        super().register(use_local)
+    def register(cls, use_local: bool = True, suppress_display: bool = False):
+        result = super().register(use_local, suppress_display)
 
         import pandas as pd
         def _repr_datatable_(self):
@@ -69,6 +69,7 @@ require(["{cls.id()}", "{JQuery.id()}"], function(dataTables, jquery) {{
             return script
 
         pd.DataFrame._repr_javascript_ = _repr_datatable_
+        return result
 
     @classmethod
     def download(cls):

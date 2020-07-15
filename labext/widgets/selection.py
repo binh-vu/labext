@@ -1,5 +1,5 @@
 from string import Template
-from typing import List, Callable
+from typing import List, Callable, Optional
 
 import ipywidgets.widgets as widgets
 import ujson
@@ -19,14 +19,15 @@ class Selection(WidgetWrapper):
                  search_fields: List[str] = None,
                  search_fn: Callable[[str], List[dict]] = None,
                  layout: dict = None,
-                 allow_creation: bool = False):
+                 allow_creation: bool = False,
+                 default_value: str = "",
+                 max_items: Optional[int]=1):
         self.el_root = widgets.HTML(value='<select></select>', layout=layout or {})
         self.el_root_id = f"selection_{self.el_root.model_id}"
         self.el_root.add_class(self.el_root_id)
 
-        self.version = -1
         # default value is '' (no choice) rather than None to be consistent with the selectize library!
-        self.value: str = ''
+        self.value: str = default_value
 
         self.records = records or []
         self.search_fn = search_fn
@@ -35,8 +36,13 @@ class Selection(WidgetWrapper):
         self.value_field = value_field
         self.search_fields = search_fields or [self.item_field]
         self.allow_creation = allow_creation
+        self.max_items = max_items or "null"
         self.on_change_callback = self.default_on_change_cb
+
         self.el_search_tunnel = SlowTunnelWidget()
+        self.el_value_tunnel = SlowTunnelWidget()
+        self.el_value_tunnel.on_receive(self.on_receive_updates)
+
         if self.search_fn is not None:
             assert len(
                 self.records
@@ -44,8 +50,8 @@ class Selection(WidgetWrapper):
             self.records = self.search_fn("")
             self.el_search_tunnel.on_receive(self._handle_search)
 
-        self.el_value_tunnel = SlowTunnelWidget()
-        self.el_value_tunnel.on_receive(self._handle_change)
+        self.pending_ops = []
+        self.is_frontend_initialized = False
 
     @property
     def widget(self):
@@ -59,19 +65,68 @@ class Selection(WidgetWrapper):
         results = self.search_fn(query)
         self.el_search_tunnel.push(version, ujson.dumps(results))
 
-    def _handle_change(self, version: int, value: str):
-        if version > self.version:
-            self.version = version
-            self.value = value
-            self.on_change_callback(value)
+    def on_receive_updates(self, version: int, msg: str):
+        msg = ujson.loads(msg)
+        if msg['type'] == 'initialized':
+            self.is_frontend_initialized = True
+            if len(self.pending_ops) > 0:
+                for op, args in self.pending_ops:
+                    if op == 'set_value':
+                        self.set_value(*args)
+                    elif op == 'replace_options':
+                        self.replace_options(*args)
+                    elif op == 'add_options':
+                        self.add_options(*args)
+                self.pending_ops = []
+            return
+
+        if msg['type'] == 'set_value':
+            self.value = msg['value']
+            self.on_change_callback(self.value)
+            return
 
     def get_value(self):
         return self.value
 
     def set_value(self, value):
-        self.version += 1
+        if not self.is_frontend_initialized:
+            self.pending_ops.append(["set_value", (value,)])
+            return
+
         self.value = value
-        self.el_value_tunnel.push(self.version, self.value)
+        msg = {
+            "type": "set_value",
+            "value": self.value
+        }
+        self.el_value_tunnel.send_msg(ujson.dumps(msg))
+
+    def replace_options(self, records: List[dict]):
+        if not self.is_frontend_initialized:
+            self.pending_ops.append(["replace_options", (records,)])
+            return
+
+        self.records = records
+        msg = {
+            "type": "replace_options",
+            "records": records
+        }
+        self.el_value_tunnel.send_msg(ujson.dumps(msg))
+
+    def add_options(self, records: List[dict]):
+        if not self.is_frontend_initialized:
+            self.pending_ops.append(["add_options", (records,)])
+            return
+
+        ids = {r[self.value_field] for r in self.records}
+        for r in records:
+            if r[self.value_field] not in ids:
+                self.records.append(r)
+
+        msg = {
+            "type": "add_options",
+            "records": records
+        }
+        self.el_value_tunnel.send_msg(ujson.dumps(msg))
 
     def get_auxiliary_components(self):
         selectize_options = """
@@ -80,8 +135,13 @@ class Selection(WidgetWrapper):
             options: $options,
             dropdownParent: 'body',
             create: $allowCreation,
+            maxItems: $maxItems,
+            items: $items,
             onChange: function (value) {
-                window.IPyCallback.get("$valueTunnel").send_msg(value);
+                window.IPyCallback.get("$valueTunnel").send_msg(JSON.stringify({
+                    type: "set_value",
+                    value: value
+                }));
             },
             render: {
                 item: function (item, escape) {
@@ -114,6 +174,8 @@ class Selection(WidgetWrapper):
                         valueField=self.value_field, searchFields=ujson.dumps(self.search_fields),
                         itemField=self.item_field, optionField=self.option_field,
                         options=ujson.dumps(self.records),
+                        items=ujson.dumps(self.value if isinstance(self.value, list) else [self.value]),
+                        maxItems=self.max_items,
                         allowCreation=str(self.allow_creation).lower())
 
         jscode = Template("""
@@ -131,13 +193,33 @@ require(["$JQueryId", "$SelectizeId"], function (jquery, _) {
         });
 
         var selectize = jquery('select', $$el)[0].selectize;
-        window.IPyCallback.get("$valueTunnel").on_receive((version, value) => {
-            if (value == "") {
-                selectize.clear(true);
-            } else {
-                selectize.addItem(value, true);
+        window.IPyCallback.get("$valueTunnel").on_receive((version, payload) => {
+            let msg = JSON.parse(payload);
+            if (msg.type == 'set_value') {
+                if (msg.value == '') {
+                    selectize.clear(true);  
+                } else if (Array.isArray(msg.value)) {
+                    selectize.clear(true);
+                    for (let v of msg.value) {
+                        selectize.addItem(v, true);
+                    }
+                } else {
+                    selectize.addItem(msg.value, true);
+                }
+            } else if (msg.type == 'replace_options') {
+                selectize.clearOptions();
+                for (let record of msg.records) {
+                    selectize.addOption(record);
+                }
+                selectize.refreshOptions(false);
+            } else if (msg.type == 'add_options') {
+                for (let record of msg.records) {
+                    selectize.addOption(record);
+                }
+                selectize.refreshOptions(false);
             }
         });
+        window.IPyCallback.get("$valueTunnel").send_msg(JSON.stringify({"type": "initialized"}));
         return true;
     }, 100);
 });

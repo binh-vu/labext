@@ -30,7 +30,7 @@ class LabExt(Module):
         return []
 
     @classmethod
-    def register(cls, use_local: bool = True):
+    def register(cls, use_local: bool = True, suppress_display: bool = False):
         jscode = Template("""
 // create a container so that widget wrappers can use to store some information
 if (window.$container === undefined) {
@@ -52,5 +52,8 @@ if (window.$CallUntilTrue === undefined) {
             container=cls.container,
             CallUntilTrue=cls.call_until_true)
 
-        display(Javascript(jscode))
+        if not suppress_display:
+            display(Javascript(jscode))
         Module.registered_modules[cls.id()] = True
+        return jscode
+
