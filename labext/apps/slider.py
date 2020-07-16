@@ -4,7 +4,7 @@ import ipywidgets.widgets as widgets
 from IPython.core.display import display
 
 
-def slider(fn: Callable[[int], Any], min=0, max=10, step=1) -> None:
+def slider(fn: Callable[[int], Any], min=0, max=10, step=1, clear_output: bool=True) -> None:
     """Interactive slider. Useful for navigating a list of items/entities/tables
 
     Parameters
@@ -16,6 +16,8 @@ def slider(fn: Callable[[int], Any], min=0, max=10, step=1) -> None:
     max: int
         the stop range of this (inclusive)
     step: int
+    clear_output: bool
+        clear the output before each function call
     """
 
     # define navigating buttons and slider
@@ -53,7 +55,8 @@ def slider(fn: Callable[[int], Any], min=0, max=10, step=1) -> None:
 
     def on_change(change):
         with output:
-            output.clear_output()
+            if clear_output:
+                output.clear_output()
             next_btn.disabled = change['new'] == slider.max
             prev_btn.disabled = change['new'] == slider.min
             fn(change['new'])
