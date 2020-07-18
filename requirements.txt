@@ -2,7 +2,7 @@ twine
 IPython
 ipywidgets
 ipyevents
-ipycallback
+ipycallback>=0.2.5
 jupyter_core
 requests
 ujson
