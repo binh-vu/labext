@@ -56,4 +56,3 @@ if (window.$CallUntilTrue === undefined) {
             display(Javascript(jscode))
         Module.registered_modules[cls.id()] = True
         return jscode
-

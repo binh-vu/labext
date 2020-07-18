@@ -4,3 +4,5 @@ __pycache__
 dist
 *.egg-info
 build
+node_modules
+package-lock.json

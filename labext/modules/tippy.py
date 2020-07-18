@@ -43,9 +43,9 @@ class Tippy(Module):
         return []
 
     @classmethod
-    def render(cls):
+    def render(cls, css_selector: str=""):
         jscode = """
 require(["@popperjs/core", "tippy"], function (popper, tippy) {
-    tippy("[data-tippy-content]", %s);
-});""" % cls.ser_args
+    tippy("%s [data-tippy-content]", %s);
+});""" % (css_selector, cls.ser_args)
         display(Javascript(jscode))

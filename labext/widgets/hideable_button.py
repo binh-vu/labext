@@ -9,7 +9,7 @@ from labext.widgets.button import Button
 
 class HideableButton(WidgetWrapper):
     def __init__(self, label: str, fn: Callable[[], None], show_event: str='click', default_visible: bool = False):
-        """Hide and show the content
+        """Hide and show the content by clicking the button
 
         Parameters
         ----------

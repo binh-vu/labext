@@ -65,3 +65,17 @@ Finally, install this package directly from `pypi`:
 ```bash
 pip install -U labext
 ``` 
+
+## Development
+
+To compile the typescript files you need to install:
+
+```bash
+npm install @types/jquery
+```
+
+Then compiles all `.ts` files, remove`--watch` if you don't want to monitor for changes.
+
+```bash
+tsc --target es2017 --watch **/*.ts
+```

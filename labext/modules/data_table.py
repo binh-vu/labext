@@ -3,6 +3,8 @@ from pathlib import Path
 from typing import List, Dict, Type
 
 import requests
+from IPython.core.display import display
+from pandas import DataFrame
 
 from labext.module import Module
 from labext.modules.jquery import JQuery
@@ -43,33 +45,11 @@ class DataTable(Module):
         return [JQuery]
 
     @classmethod
-    def register(cls, use_local: bool = True, suppress_display: bool = False):
-        result = super().register(use_local, suppress_display)
-
-        import pandas as pd
-        def _repr_datatable_(self):
-            """Return DataTable representation of pandas DataFrame."""
-            # create table DOM
-            # script = f'$(element).html(`{self.to_html(**cls.args)}`);\n'
-            # execute jQuery to turn table into DataTable
-            html = self.to_html(**cls.py_args)
-
-            script = f"""
-require(["{cls.id()}", "{JQuery.id()}"], function(dataTables, jquery) {{
-    jquery(element).html(`{html}`);
-    jquery(document).ready( () => {{
-        // Turn existing table into datatable
-        let tbl = jquery(element).find("table.dataframe");
-        // fix issue that header & rows not aligned properly when setting scrollX to True 
-        // (the table is center while the header is not)
-        tbl.css('margin', '0px');
-        tbl.DataTable({json.dumps(cls.js_args)});
-    }})
-}});"""
-            return script
-
-        pd.DataFrame._repr_javascript_ = _repr_datatable_
-        return result
+    def render(cls, df: DataFrame, *args, **kwargs):
+        """Rendering a data frame"""
+        from labext.widgets.data_table import DataTable
+        dt = DataTable(df, *args, **kwargs)
+        display(dt.widget, *dt.get_auxiliary_components())
 
     @classmethod
     def download(cls):

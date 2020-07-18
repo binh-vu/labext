@@ -91,9 +91,10 @@ class Module(ABC):
                 modules=", ".join(modules),
                 setup_css="\n".join(setup_css))
 
+        Module.registered_modules[cls.id()] = True
         if not suppress_display:
             display(Javascript(jscode))
-        Module.registered_modules[cls.id()] = True
+            return
         return jscode
 
     @classmethod
