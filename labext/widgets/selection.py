@@ -39,8 +39,8 @@ class Selection(WidgetWrapper):
         self.max_items = max_items or "null"
         self.on_change_callback = self.default_on_change_cb
 
-        self.el_search_tunnel = SlowTunnelWidget()
-        self.el_value_tunnel = SlowTunnelWidget()
+        self.el_search_tunnel = SlowTunnelWidget(tunnel_id=f"{self.el_root_id}_search")
+        self.el_value_tunnel = SlowTunnelWidget(tunnel_id=f"{self.el_root_id}_value")
         self.el_value_tunnel.on_receive(self.on_receive_updates)
 
         if self.search_fn is not None:
@@ -170,7 +170,7 @@ class Selection(WidgetWrapper):
             }"""
 
         selectize_options = Template(selectize_options.strip()) \
-            .substitute(searchTunnel=self.el_search_tunnel.model_id, valueTunnel=self.el_value_tunnel.model_id,
+            .substitute(searchTunnel=self.el_search_tunnel.tunnel_id, valueTunnel=self.el_value_tunnel.tunnel_id,
                         valueField=self.value_field, searchFields=ujson.dumps(self.search_fields),
                         itemField=self.item_field, optionField=self.option_field,
                         options=ujson.dumps(self.records),
@@ -227,7 +227,7 @@ require(["$JQueryId", "$SelectizeId"], function (jquery, _) {
                         SelectizeId=Selectize.id(),
                         uniqueClassId=self.el_root_id,
                         selectizeOptions=selectize_options,
-                        valueTunnel=self.el_value_tunnel.model_id,
+                        valueTunnel=self.el_value_tunnel.tunnel_id,
                         CallUntilTrue=LabExt.call_until_true)
 
         return [self.el_value_tunnel, self.el_search_tunnel, Javascript(jscode)]

@@ -59,6 +59,12 @@ class DataTable(WidgetWrapper):
                         return false;
                     }
                     
+                    // fix the issue of horizontal scrolling (the size goes beyond the border as jupyter set overflow
+                    // to be visible
+                    el.css('overflow-x', 'scroll');
+                    el.parent().css('overflow-x', 'scroll');
+                    el.parent().parent().css('overflow-x', 'scroll');
+                    
                     if (window.$container.DataTable === undefined) {
                         window.$container.DataTable = new Map();
                     }
