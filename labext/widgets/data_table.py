@@ -60,11 +60,21 @@ class DataTable(WidgetWrapper):
                     }
                     
                     // fix the issue of horizontal scrolling (the size goes beyond the border as jupyter set overflow
-                    // to be visible
-                    el.css('overflow-x', 'scroll');
-                    el.parent().css('overflow-x', 'scroll');
-                    el.parent().parent().css('overflow-x', 'scroll');
-                    
+                    // to be visible)
+                    // DOM structure (* is the one we need to modify)
+                    // jp-Cell-outputArea
+                    // jp-OutputArea-child
+                    // jp-OutputArea-output *
+                    // widgets-output *
+                    // jp-OutputArea *
+                    // jp-OutputArea-child
+                    // jp-OutputArea-output *
+                    let ptr = el;
+                    while (!ptr.parent().hasClass("jp-Cell-outputArea")) {
+                        ptr.css('overflow-x', 'scroll');
+                        ptr = ptr.parent();
+                    }
+
                     if (window.$container.DataTable === undefined) {
                         window.$container.DataTable = new Map();
                     }
