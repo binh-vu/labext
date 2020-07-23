@@ -63,7 +63,7 @@ class Selection(WidgetWrapper):
 
     def _handle_search(self, version: int, query: str):
         results = self.search_fn(query)
-        self.el_search_tunnel.push(version, ujson.dumps(results))
+        self.el_search_tunnel.send_msg_with_version(version, ujson.dumps(results))
 
     def on_receive_updates(self, version: int, msg: str):
         msg = ujson.loads(msg)

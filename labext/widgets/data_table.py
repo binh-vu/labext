@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     # do this because pandas is optional
     from pandas import DataFrame
 
-from labext.helpers import read_file
+from labext.helpers import noarg_func, read_file
 from labext.widget import WidgetWrapper
 import labext.modules as M
 
@@ -71,7 +71,8 @@ class DataTable(WidgetWrapper):
                     // jp-OutputArea-output *
                     let ptr = el;
                     while (!ptr.parent().hasClass("jp-Cell-outputArea")) {
-                        ptr.css('overflow-x', 'scroll');
+                        ptr.css('overflow-x', 'auto');
+                        ptr.css('margin', '0px');
                         ptr = ptr.parent();
                     }
 
@@ -99,6 +100,8 @@ class DataTable(WidgetWrapper):
                                 options=ujson.dumps(self.options))
 
         self.el_auxiliaries = [self.tunnel, Javascript(jscode)]
+        self.init_complete = False
+        self.init_complete_callback = noarg_func
 
     @property
     def widget(self):
@@ -122,6 +125,9 @@ class DataTable(WidgetWrapper):
         )
         display(Javascript(jscode))
 
+    def on_init_complete(self, callback = None):
+        self.init_complete_callback = callback or noarg_func
+
     def on_receive_updates(self, version: int, msg: str):
         msg = ujson.loads(msg)
         if msg['type'] == 'query':
@@ -132,3 +138,10 @@ class DataTable(WidgetWrapper):
                 "data":  self.df[msg['start']:msg['start']+msg['length']].values.tolist()
             }
             self.tunnel.send_msg_with_version(version, ujson.dumps(resp))
+        elif msg['type'] == 'handshake':
+            msg = msg['msg']
+            if msg == 'init_start':
+                pass
+            elif msg == 'init_done':
+                self.init_complete = True
+                self.init_complete_callback()

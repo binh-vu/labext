@@ -36,7 +36,7 @@ class LabExtDataTable {
     };
     this.isInitComplete = false;
 
-    this.tunnel.send_msg(JSON.stringify({"type": "handshake", "msg": "initialized"}));
+    this.tunnel.send_msg(JSON.stringify({"type": "handshake", "msg": "init_start"}));
   }
 
   render() {
@@ -73,6 +73,7 @@ class LabExtDataTable {
       },
       initComplete: () => {
         this.isInitComplete = true;
+        this.tunnel.send_msg(JSON.stringify({"type": "handshake", "msg": "init_done"}));
       },
       ...this.options
     });

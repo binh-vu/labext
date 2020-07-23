@@ -1,7 +1,10 @@
 import json
+from labext.modules.lab_ext import LabExt
+from string import Template
 from typing import List, Dict, Tuple, Callable, Any, Optional, Type
 
 from IPython.core.display import display, Javascript
+from ipycallback.slow_tunnel import SlowTunnelWidget
 
 from labext.module import Module
 
@@ -18,13 +21,7 @@ class Tippy(Module):
         >>> Tippy.render()
     """
     # Properties that can be set: https://atomiks.github.io/tippyjs/v6/all-props/#interactive
-    args = {}
-    ser_args = "{}"
-
-    @classmethod
-    def set_args(cls, **kwargs):
-        cls.args.update(**kwargs)
-        cls.ser_args = json.dumps(cls.args)
+    tunnel = SlowTunnelWidget(tunnel_id="labext.tippy")
 
     @classmethod
     def id(cls) -> str:
@@ -40,12 +37,32 @@ class Tippy(Module):
 
     @classmethod
     def dependencies(cls) -> List[Type['Module']]:
-        return []
+        return [LabExt]
+    
+    @classmethod
+    def register(cls, use_local: bool = True, suppress_display: bool = False):
+        result = super().register(use_local, suppress_display)
+        jscode = Javascript(Template("""
+        require(["@popperjs/core", "tippy"], function (popper, tippy) {
+            $CallUntilTrue(function () {
+                if (window.IPyCallback === undefined || window.IPyCallback.get("$tunnelId") === undefined) {
+                    return false;
+                }
+
+                window.IPyCallback.get("$tunnelId").on_receive((version, payload) => {
+                    let msg = JSON.parse(payload);
+                    tippy(`$${msg.selector} [data-tippy-content]`, msg.params);
+                });
+                return true;
+            }, 100);
+        });
+                """).substitute(tunnelId=cls.tunnel.tunnel_id, CallUntilTrue=LabExt.call_until_true))
+        display(cls.tunnel, jscode)
+        return result
 
     @classmethod
-    def render(cls, css_selector: str=""):
-        jscode = """
-require(["@popperjs/core", "tippy"], function (popper, tippy) {
-    tippy("%s [data-tippy-content]", %s);
-});""" % (css_selector, cls.ser_args)
-        display(Javascript(jscode))
+    def render(cls, css_selector: str="", params: str=None):
+        cls.tunnel.send_msg(json.dumps({
+            "selector": css_selector,
+            "params": params or {}
+        }))

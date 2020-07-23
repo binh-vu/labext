@@ -11,23 +11,6 @@ from labext.modules.jquery import JQuery
 
 
 class DataTable(Module):
-    py_args = {
-        "index": True,
-        "escape": True,
-        "border": 0,
-        "justify": "left",
-        "classes": ['table', 'table-striped', 'table-bordered'],
-    }
-    js_args = {}
-
-    @classmethod
-    def set_args(cls, **kwargs):
-        cls.py_args.update(**kwargs)
-
-    @classmethod
-    def set_js_args(cls, **kwargs):
-        cls.js_args.update(**kwargs)
-
     @classmethod
     def id(cls) -> str:
         return "data_table"
