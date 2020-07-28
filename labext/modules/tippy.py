@@ -33,12 +33,13 @@ class Tippy(Module):
 
     @classmethod
     def js(cls) -> Dict[str, str]:
-        return {"@popperjs/core": 'https://unpkg.com/@popperjs/core@2/dist/umd/popper.min', cls.id(): "https://unpkg.com/tippy.js@6/dist/tippy-bundle.umd.min"}
+        return {"@popperjs/core": 'https://unpkg.com/@popperjs/core@2/dist/umd/popper.min',
+                cls.id(): "https://unpkg.com/tippy.js@6/dist/tippy-bundle.umd.min"}
 
     @classmethod
     def dependencies(cls) -> List[Type['Module']]:
         return [LabExt]
-    
+
     @classmethod
     def register(cls, use_local: bool = True, suppress_display: bool = False):
         result = super().register(use_local, suppress_display)
@@ -61,7 +62,7 @@ class Tippy(Module):
         return result
 
     @classmethod
-    def render(cls, css_selector: str="", params: str=None):
+    def render(cls, css_selector: str = "", params: dict = None):
         cls.tunnel.send_msg(json.dumps({
             "selector": css_selector,
             "params": params or {}

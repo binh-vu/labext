@@ -7,7 +7,7 @@ class LabExtDataTable {
         this.table_style = table_style;
         this.options = Object.assign({ deferRender: true, serverSide: true }, options);
         this.isInitComplete = false;
-        this.tunnel.send_msg(JSON.stringify({ "type": "handshake", "msg": "init_start" }));
+        this.tunnel.send_msg(JSON.stringify({ "type": "status", "msg": "init_start" }));
     }
     render() {
         // now render the content
@@ -37,7 +37,11 @@ class LabExtDataTable {
                 });
             }, initComplete: () => {
                 this.isInitComplete = true;
-                this.tunnel.send_msg(JSON.stringify({ "type": "handshake", "msg": "init_done" }));
+                this.tunnel.send_msg(JSON.stringify({ "type": "status", "msg": "init_done" }));
+            }, drawCallback: () => {
+                if (this.isInitComplete) {
+                    this.tunnel.send_msg(JSON.stringify({ "type": "status", "msg": "redraw_done" }));
+                }
             } }, this.options));
     }
 }

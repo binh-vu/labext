@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from string import Template
-from typing import Type, List, TYPE_CHECKING, Optional
+from typing import Type, List, TYPE_CHECKING, Optional, Callable
 from uuid import uuid4
 
 import ipywidgets.widgets as widgets
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     # do this because pandas is optional
     from pandas import DataFrame
 
-from labext.helpers import noarg_func, read_file
+from labext.helpers import noarg_func, read_file, identity_func
 from labext.widget import WidgetWrapper
 import labext.modules as M
 
@@ -62,13 +62,13 @@ class DataTable(WidgetWrapper):
                     // fix the issue of horizontal scrolling (the size goes beyond the border as jupyter set overflow
                     // to be visible)
                     // DOM structure (* is the one we need to modify)
-                    // jp-Cell-outputArea
-                    // jp-OutputArea-child
-                    // jp-OutputArea-output *
-                    // widgets-output *
-                    // jp-OutputArea *
-                    // jp-OutputArea-child
-                    // jp-OutputArea-output *
+                    //     jp-Cell-outputArea
+                    //     jp-OutputArea-child
+                    //     jp-OutputArea-output *
+                    //     widgets-output *
+                    //     jp-OutputArea *
+                    //     jp-OutputArea-child
+                    //     jp-OutputArea-output *
                     let ptr = el;
                     while (!ptr.parent().hasClass("jp-Cell-outputArea")) {
                         ptr.css('overflow-x', 'auto');
@@ -102,6 +102,9 @@ class DataTable(WidgetWrapper):
         self.el_auxiliaries = [self.tunnel, Javascript(jscode)]
         self.init_complete = False
         self.init_complete_callback = noarg_func
+        self.on_draw_complete_callback = noarg_func
+        self.on_redraw_complete_callback = noarg_func
+        self.transform = identity_func
 
     @property
     def widget(self):
@@ -127,6 +130,19 @@ class DataTable(WidgetWrapper):
 
     def on_init_complete(self, callback = None):
         self.init_complete_callback = callback or noarg_func
+        return self
+
+    def on_draw_complete(self, callback = None):
+        self.on_draw_complete_callback = callback
+        return self
+
+    def on_redraw_complete(self, callback = None):
+        self.on_redraw_complete_callback = callback
+        return self
+
+    def set_transform_fn(self, transform: Callable[[list], list]):
+        self.transform = transform
+        return self
 
     def on_receive_updates(self, version: int, msg: str):
         msg = ujson.loads(msg)
@@ -135,13 +151,17 @@ class DataTable(WidgetWrapper):
             resp = {
                 "recordsTotal": len(self.df.index),
                 "recordsFiltered": len(self.df.index),
-                "data":  self.df[msg['start']:msg['start']+msg['length']].values.tolist()
+                "data":  self.transform(self.df[msg['start']:msg['start']+msg['length']].values.tolist())
             }
             self.tunnel.send_msg_with_version(version, ujson.dumps(resp))
-        elif msg['type'] == 'handshake':
+        elif msg['type'] == 'status':
             msg = msg['msg']
-            if msg == 'init_start':
-                pass
-            elif msg == 'init_done':
+            if msg == 'init_done':
                 self.init_complete = True
                 self.init_complete_callback()
+                self.on_draw_complete_callback()
+            elif msg == 'redraw_done':
+                self.on_draw_complete_callback()
+                self.on_redraw_complete_callback()
+            # elif msg == 'init_start':
+            #     pass

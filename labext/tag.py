@@ -19,12 +19,24 @@ class Tag:
         return Tag('span', children or [])
 
     @staticmethod
+    def pre(children: Union[str, 'Tag', List[Union[str, 'Tag']]] = None):
+        return Tag("pre", children or [])
+
+    @staticmethod
+    def code(children: Union[str, 'Tag', List[Union[str, 'Tag']]] = None):
+        return Tag("code", children or [])
+
+    @staticmethod
     def a(children: Union[str, 'Tag', List[Union[str, 'Tag']]]=None):
         return Tag("a", children or [])
 
     @staticmethod
     def ul(children: Union[str, 'Tag', List[Union[str, 'Tag']]] = None):
         return Tag("ul", children or [])
+
+    @staticmethod
+    def ol(children: Union[str, 'Tag', List[Union[str, 'Tag']]] = None):
+        return Tag("ol", children or [])
 
     @staticmethod
     def li(children: Union[str, 'Tag', List[Union[str, 'Tag']]] = None):
@@ -37,6 +49,30 @@ class Tag:
     @staticmethod
     def p(children: Union[str, 'Tag', List[Union[str, 'Tag']]] = None):
         return Tag("p", children or [])
+
+    @staticmethod
+    def table(children: Union[str, 'Tag', List[Union[str, 'Tag']]] = None):
+        return Tag("table", children or [])
+
+    @staticmethod
+    def thead(children: Union[str, 'Tag', List[Union[str, 'Tag']]] = None):
+        return Tag("thead", children or [])
+
+    @staticmethod
+    def tbody(children: Union[str, 'Tag', List[Union[str, 'Tag']]] = None):
+        return Tag("tbody", children or [])
+
+    @staticmethod
+    def tr(children: Union[str, 'Tag', List[Union[str, 'Tag']]] = None):
+        return Tag("tr", children or [])
+
+    @staticmethod
+    def th(children: Union[str, 'Tag', List[Union[str, 'Tag']]] = None):
+        return Tag("th", children or [])
+
+    @staticmethod
+    def td(children: Union[str, 'Tag', List[Union[str, 'Tag']]] = None):
+        return Tag("td", children or [])
 
     def css(self, **kwargs):
         for prop, value in kwargs.items():
@@ -56,8 +92,13 @@ class Tag:
             self._attrs[prop] = value
         return self
 
-    def data(self, data: dict):
-        self._data.update(data)
+    def data(self, **kwargs):
+        for prop, value in kwargs.items():
+            result = []
+            for match in self.camel_reg.finditer(prop):
+                result.append(match.group(0))
+            prop = "-".join(result).lower()
+            self._data[prop] = value
         return self
 
     def add_child(self, x: Union[list, Union[str, 'Tag']]):

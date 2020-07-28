@@ -87,7 +87,7 @@ class Module(ABC):
             setup_css.append("    }")
 
             jscode += "require([{str_modules}], function ({modules}) {{\n{setup_css}\n}});\n".format(
-                str_modules=json.dumps(modules)[1:-1],
+                str_modules=json.dumps([m for m in modules if m != "misc_func"])[1:-1],
                 modules=", ".join(modules),
                 setup_css="\n".join(setup_css))
 
