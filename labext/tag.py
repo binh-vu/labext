@@ -7,7 +7,7 @@ class Tag:
 
     def __init__(self, tag: str, children: Union[str, 'Tag', List[Union[str, 'Tag']]]):
         self.tag = tag
-        if isinstance(children, (str, Tag)):
+        if not isinstance(children, list):
             children = [children]
         self.children = children
         self._styles = {}
