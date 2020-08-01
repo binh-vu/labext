@@ -52,6 +52,9 @@ class Tippy(Module):
 
                 window.IPyCallback.get("$tunnelId").on_receive((version, payload) => {
                     let msg = JSON.parse(payload);
+                    if (msg.params.appendTo !== undefined) {
+                        msg.params.appendTo = document.querySelector(msg.params.appendTo);  
+                    }
                     tippy(`$${msg.selector} [data-tippy-content]`, msg.params);
                 });
                 return true;

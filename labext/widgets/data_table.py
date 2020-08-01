@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from string import Template
-from typing import Type, List, TYPE_CHECKING, Optional, Callable
+from typing import Type, List, TYPE_CHECKING, Optional, Callable, Union
 from uuid import uuid4
 
 import ipywidgets.widgets as widgets
@@ -19,7 +19,7 @@ import labext.modules as M
 
 
 class DataTable(WidgetWrapper):
-    def __init__(self, df: 'DataFrame', table_class: str='display', table_id: Optional[str]=None, **kwargs):
+    def __init__(self, df: 'DataFrame', table_class: str='display', columns: Optional[Union[dict, List[dict]]]=None, table_id: Optional[str]=None, **kwargs):
         """Show the
 
         Parameters
@@ -28,6 +28,8 @@ class DataTable(WidgetWrapper):
             the data frame that we want to display
         table_class: str
             html classes for formatting the table's style: https://datatables.net/manual/styling/classes
+        columns: Union[dict, List[dict]]
+            custom definition for each column: https://datatables.net/reference/option/columns
         table_id: Optional[str]
             id of the table, manually giving the table an id helps reducing number of instances in the client
             as we store this data table in the client side to reduce the
@@ -37,6 +39,20 @@ class DataTable(WidgetWrapper):
         """
         self.df = df
         self.table_class = table_class
+
+        base_defs = [{"title": name} for name in df.columns]
+        if columns is not None:
+            if isinstance(columns, list):
+                assert len(columns) == len(base_defs)
+                for i in range(len(base_defs)):
+                    assert isinstance(columns[i], dict)
+                    base_defs[i].update(columns[i])
+            else:
+                assert isinstance(columns, dict)
+                for i in range(len(base_defs)):
+                    base_defs[i].update(columns)
+        self.columns = base_defs
+
         self.table_id = table_id or str(uuid4())
         self.options = kwargs
 
@@ -95,7 +111,7 @@ class DataTable(WidgetWrapper):
                                 containerClassId=self.el_class_id,
                                 tableId=self.table_id,
                                 tunnelId=self.tunnel.tunnel_id,
-                                columns=ujson.dumps(self.df.columns.tolist()),
+                                columns=ujson.dumps(self.columns),
                                 table_class=self.table_class,
                                 options=ujson.dumps(self.options))
 

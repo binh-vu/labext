@@ -15,7 +15,7 @@ class LabExtDataTable {
             .attr({ "class": this.table_style })
             .css({ "width": "100%" })
             .appendTo(this.$container.empty());
-        $tbl.DataTable(Object.assign({ columns: this.columns.map(name => ({ title: name })), ajax: (data, callback, settings) => {
+        $tbl.DataTable(Object.assign({ columns: this.columns, ajax: (data, callback, settings) => {
                 // documentation in here: https://datatables.net/manual/server-side
                 let version = this.tunnel.send_msg(JSON.stringify({
                     type: "query",

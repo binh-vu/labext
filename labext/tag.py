@@ -85,10 +85,15 @@ class Tag:
 
     def attr(self, **kwargs):
         for prop, value in kwargs.items():
-            result = []
-            for match in self.camel_reg.finditer(prop):
-                result.append(match.group(0))
-            prop = "-".join(result).lower()
+            if prop == "htmlClass":
+                prop = 'class'
+            elif prop == 'htmlFor':
+                prop = 'for'
+            else:
+                result = []
+                for match in self.camel_reg.finditer(prop):
+                    result.append(match.group(0))
+                prop = "-".join(result).lower()
             self._attrs[prop] = value
         return self
 

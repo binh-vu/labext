@@ -11,7 +11,7 @@ class LabExtDataTable {
   // style of the table: https://datatables.net/manual/styling/classes
   table_style: string;
   // list of column names
-  columns: string[];
+  columns: object[];
   // init options for the DataTable plugin
   options: object;
 
@@ -20,7 +20,7 @@ class LabExtDataTable {
   constructor(jquery: JQueryStatic,
               container: JQuery<HTMLElement>,
               tunnel: Tunnel,
-              columns: string[],
+              columns: object[],
               table_style: string,
               options: {} = {}) {
     this.$ = jquery;
@@ -47,7 +47,7 @@ class LabExtDataTable {
       .appendTo(this.$container.empty());
 
     ($tbl as any).DataTable({
-      columns: this.columns.map(name => ({title: name})),
+      columns: this.columns,
       ajax: (data: any, callback: any, settings: any) => {
         // documentation in here: https://datatables.net/manual/server-side
         let version = this.tunnel.send_msg(JSON.stringify({
