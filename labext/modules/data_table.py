@@ -7,6 +7,7 @@ from IPython.core.display import display
 from pandas import DataFrame
 
 from labext.module import Module
+from labext.modules.lab_ext import LabExt
 from labext.modules.jquery import JQuery
 
 
@@ -25,7 +26,7 @@ class DataTable(Module):
 
     @classmethod
     def dependencies(cls) -> List[Type['Module']]:
-        return [JQuery]
+        return [JQuery, LabExt]
 
     @classmethod
     def render(cls, df: DataFrame, *args, **kwargs):

@@ -128,7 +128,7 @@ class DataTable(WidgetWrapper):
 
     @staticmethod
     def required_modules() -> List[Type[M.Module]]:
-        return [M.DataTable, M.JQuery, M.LabExt]
+        return [M.DataTable]
 
     def get_auxiliary_components(self, *args) -> list:
         return self.el_auxiliaries
