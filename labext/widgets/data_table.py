@@ -1,4 +1,5 @@
 import os
+from abc import abstractmethod, ABC
 from pathlib import Path
 from string import Template
 from typing import Type, List, TYPE_CHECKING, Optional, Callable, Union
@@ -18,14 +19,47 @@ from labext.widget import WidgetWrapper
 import labext.modules as M
 
 
+class ITable(ABC):
+    """An (abstract) table that can be displayed using DataTable widget"""
+
+    @abstractmethod
+    def columns(self) -> List[str]:
+        """Return list of column names"""
+        pass
+
+    @abstractmethod
+    def size(self) -> int:
+        """Return number of records in the table"""
+        pass
+
+    @abstractmethod
+    def get_rows(self, start: int, end: int) -> List[list]:
+        """Get the records from row start to end"""
+        pass
+
+
+class ITableDataFrame(ITable):
+    def __init__(self, df: 'DataFrame'):
+        self.df = df
+
+    def columns(self) -> List[str]:
+        return self.df.columns
+
+    def size(self) -> int:
+        return len(self.df.index)
+
+    def get_rows(self, start: int, end: int) -> List[list]:
+        return self.df[start:end].values.tolist()
+
+
 class DataTable(WidgetWrapper):
-    def __init__(self, df: 'DataFrame', table_class: str='display', columns: Optional[Union[dict, List[dict]]]=None, table_id: Optional[str]=None, **kwargs):
+    def __init__(self, tbl: Union['DataFrame', ITable], table_class: str= 'display', columns: Optional[Union[dict, List[dict]]]=None, table_id: Optional[str]=None, **kwargs):
         """Show the
 
         Parameters
         ----------
-        df: DataFrame
-            the data frame that we want to display
+        tbl: Union[DataFrame, ITable]
+            the data frame or an instance that implement the ITable class that we want to display
         table_class: str
             html classes for formatting the table's style: https://datatables.net/manual/styling/classes
         columns: Union[dict, List[dict]]
@@ -37,10 +71,14 @@ class DataTable(WidgetWrapper):
             see the [examples](https://datatables.net/examples/index) and the [options](https://datatables.net/manual/options)
             the options will be passed directly to the client
         """
-        self.df = df
+        if not isinstance(tbl, ITable):
+            # this should be dataframe
+            self.table = ITableDataFrame(tbl)
+        else:
+            self.table = tbl
         self.table_class = table_class
 
-        base_defs = [{"title": name} for name in df.columns]
+        base_defs = [{"title": name} for name in self.table.columns()]
         if columns is not None:
             if isinstance(columns, list):
                 assert len(columns) == len(base_defs)
@@ -164,10 +202,11 @@ class DataTable(WidgetWrapper):
         msg = ujson.loads(msg)
         if msg['type'] == 'query':
             msg = msg['msg']
+            n_records = self.table.size()
             resp = {
-                "recordsTotal": len(self.df.index),
-                "recordsFiltered": len(self.df.index),
-                "data":  self.transform(self.df[msg['start']:msg['start']+msg['length']].values.tolist())
+                "recordsTotal": n_records,
+                "recordsFiltered": n_records,
+                "data":  self.transform(self.table.get_rows(msg['start'], msg['start']+msg['length']))
             }
             self.tunnel.send_msg_with_version(version, ujson.dumps(resp))
         elif msg['type'] == 'status':
