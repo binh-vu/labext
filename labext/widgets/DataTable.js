@@ -5,13 +5,32 @@ class LabExtDataTable {
         this.tunnel = tunnel;
         this.columns = columns;
         this.table_style = table_style;
+        if (options.caption !== undefined) {
+            this.caption = options.caption;
+            delete options.caption;
+        }
         this.options = Object.assign({ deferRender: true, serverSide: true }, options);
         this.isInitComplete = false;
         this.tunnel.send_msg(JSON.stringify({ "type": "status", "msg": "init_start" }));
+        // some options take functions, so we need to create that function from string
+        // enable $ for those functions to use
+        var $ = jquery;
+        var fn = undefined;
+        for (let col of this.columns) {
+            // https://datatables.net/reference/option/columns.createdCell
+            if (col.createdCell !== undefined) {
+                eval("fn = " + col.createdCell);
+                col.createdCell = fn;
+            }
+        }
+        if (this.options.createdRow !== undefined) {
+            eval("fn = " + this.options.createdRow);
+            this.options.createdRow = fn;
+        }
     }
     render() {
         // now render the content
-        let $tbl = $("<table></table>")
+        let $tbl = this.$(`<table>${this.caption || ""}</table>`)
             .attr({ "class": this.table_style })
             .css({ "width": "100%" })
             .appendTo(this.$container.empty());

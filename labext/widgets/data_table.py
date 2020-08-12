@@ -77,7 +77,6 @@ class DataTable(WidgetWrapper):
         else:
             self.table = tbl
         self.table_class = table_class
-
         base_defs = [{"title": name} for name in self.table.columns()]
         if columns is not None:
             if isinstance(columns, list):
@@ -100,7 +99,10 @@ class DataTable(WidgetWrapper):
         self.el_class_id = f"DataTable_{self.el.model_id}"
         self.el.add_class(self.el_class_id)
 
+        # use pkg_resources instead of __file__ to support install package via `pip install -e .`
         jscode = read_file(Path(os.path.abspath(__file__)).parent / "DataTable.js")
+        # jscode = read_file(pkg_resources.resource_filename("labext", "widgets/DataTable.js"))
+
         jscode += Template("""
             require(['$JQueryId'], function (jquery) {
                 $CallUntilTrue(function () {

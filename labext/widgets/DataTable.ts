@@ -14,6 +14,8 @@ class LabExtDataTable {
   columns: object[];
   // init options for the DataTable plugin
   options: object;
+  // caption of the table
+  caption?: string;
 
   isInitComplete: boolean;
 
@@ -22,13 +24,18 @@ class LabExtDataTable {
               tunnel: Tunnel,
               columns: object[],
               table_style: string,
-              options: {} = {}) {
+              options: { [key: string]: any } = {}) {
     this.$ = jquery;
     this.$container = container;
     this.tunnel = tunnel;
     this.columns = columns;
 
     this.table_style = table_style;
+    if (options.caption !== undefined) {
+      this.caption = options.caption;
+      delete options.caption;
+    }
+
     this.options = {
       deferRender: true,
       serverSide: true,
@@ -37,11 +44,29 @@ class LabExtDataTable {
     this.isInitComplete = false;
 
     this.tunnel.send_msg(JSON.stringify({"type": "status", "msg": "init_start"}));
+
+    // some options take functions, so we need to create that function from string
+    // enable $ for those functions to use
+    var $ = jquery;
+    var fn = undefined;
+
+    for (let col of this.columns) {
+      // https://datatables.net/reference/option/columns.createdCell
+      if ((col as any).createdCell !== undefined) {
+        eval("fn = " + (col as any).createdCell);
+        (col as any).createdCell = fn;
+      }
+    }
+
+    if ((this.options as any).createdRow !== undefined) {
+      eval("fn = " + (this.options as any).createdRow);
+      (this.options as any).createdRow = fn;
+    }
   }
 
   render() {
     // now render the content
-    let $tbl = $("<table></table>")
+    let $tbl = this.$(`<table>${this.caption || ""}</table>`)
       .attr({"class": this.table_style})
       .css({"width": "100%"})
       .appendTo(this.$container.empty());
