@@ -4,7 +4,7 @@ import ujson
 from IPython.core.display import display, Javascript
 from ipycallback import SlowTunnelWidget
 
-from labext.module import Module
+from labext.module import Module, LabExtModuleId
 from string import Template
 
 
@@ -20,7 +20,7 @@ class LabExt(Module):
 
     @classmethod
     def id(cls) -> str:
-        return "misc_func"
+        return LabExtModuleId
 
     @classmethod
     def css(cls) -> List[str]:

@@ -12,6 +12,9 @@ from IPython.core.display import display, Javascript
 from jupyter_core.paths import jupyter_config_dir
 
 
+LabExtModuleId = "misc_func"
+
+
 class Module(ABC):
     registered_modules: Dict[str, bool] = {}
 
@@ -58,6 +61,10 @@ class Module(ABC):
             css_files = cls.css()
 
         modules = [cls.id()]
+        if len(js) > 0:
+            jscode = "require.config({ paths: %s });\n" % json.dumps(js)
+        else:
+            jscode = ""
 
         for m in cls.flatten_dependencies():
             modules.append(m.id())
@@ -67,12 +74,9 @@ class Module(ABC):
             dup_js = set(js.keys()).intersection(m.js().keys())
             assert len(dup_js) == 0, f"Duplicated js: {dup_js}"
 
-            m.register(use_local)
-
-        if len(js) > 0:
-            jscode = "require.config({ paths: %s });\n" % json.dumps(js)
-        else:
-            jscode = ""
+            register_code = m.register(use_local, suppress_display)
+            if register_code is not None:
+                jscode += register_code + "\n"
 
         if len(css_files) > 0:
             setup_css = [f"""    if (document.querySelector("head link#{cls.id()}-css-fds82j1") === null) {{"""]
@@ -87,8 +91,8 @@ class Module(ABC):
             setup_css.append("    }")
 
             jscode += "require([{str_modules}], function ({modules}) {{\n{setup_css}\n}});\n".format(
-                str_modules=json.dumps([m for m in modules if m != "misc_func"])[1:-1],
-                modules=", ".join(modules),
+                str_modules=json.dumps([m for m in modules if m != LabExtModuleId])[1:-1],
+                modules=", ".join([m for m in modules if m != LabExtModuleId]),
                 setup_css="\n".join(setup_css))
 
         Module.registered_modules[cls.id()] = True
