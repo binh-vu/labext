@@ -74,13 +74,37 @@ class Tag:
     def td(children: Union[str, 'Tag', List[Union[str, 'Tag']]] = None):
         return Tag("td", children or [])
 
+    @staticmethod
+    def button(children: Union[str, 'Tag', List[Union[str, 'Tag']]] = None):
+        return Tag("button", children or [])
+
+    @staticmethod
+    def label(children: Union[str, 'Tag', List[Union[str, 'Tag']]] = None):
+        return Tag("label", children or [])
+
+    def clear_css(self):
+        self._styles = {}
+        return self
+
+    def clear_attr(self):
+        self._attrs = {}
+        return self
+
+    def clear_data(self):
+        self._data = {}
+        return self
+
     def css(self, **kwargs):
         for prop, value in kwargs.items():
             result = []
             for match in self.camel_reg.finditer(prop):
                 result.append(match.group(0))
             prop = "-".join(result).lower()
-            self._styles[prop] = value
+            if value is None:
+                if prop in self._styles:
+                    self._styles.pop(prop)
+            else:
+                self._styles[prop] = value
         return self
 
     def attr(self, **kwargs):
@@ -94,7 +118,11 @@ class Tag:
                 for match in self.camel_reg.finditer(prop):
                     result.append(match.group(0))
                 prop = "-".join(result).lower()
-            self._attrs[prop] = value
+            if value is None:
+                if prop in self._attrs:
+                    self._attrs.pop(prop)
+            else:
+                self._attrs[prop] = value
         return self
 
     def data(self, **kwargs):
@@ -103,7 +131,12 @@ class Tag:
             for match in self.camel_reg.finditer(prop):
                 result.append(match.group(0))
             prop = "-".join(result).lower()
-            self._data[prop] = value
+
+            if value is None:
+                if prop in self._data:
+                    self._data.pop(prop)
+            else:
+                self._data[prop] = value
         return self
 
     def add_child(self, x: Union[list, Union[str, 'Tag']]):
@@ -111,6 +144,9 @@ class Tag:
             self.children += x
         else:
             self.children.append(x)
+
+    def get_attr(self, key, default=None):
+        return self._attrs.get(key, default)
 
     def value(self):
         return str(self)

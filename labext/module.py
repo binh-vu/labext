@@ -39,8 +39,8 @@ class Module(ABC):
         deps = {}
         for m in cls.dependencies():
             deps[m.id()] = m
-            deps.update(m.flatten_dependencies())
-
+            for pm in m.flatten_dependencies():
+                deps[pm.id()] = pm
         return [v for k, v in sorted(deps.items(), key=itemgetter(0))]
 
     @classmethod

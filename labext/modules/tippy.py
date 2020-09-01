@@ -55,14 +55,14 @@ class Tippy(Module):
                     if (msg.params.appendTo !== undefined) {
                         msg.params.appendTo = document.querySelector(msg.params.appendTo);  
                     }
-                    if (msg.debug !== undefined) {
+                    if (msg.params.debug !== undefined) {
                         window.tippy = tippy;
                         console.log("Tippy args:", `$${msg.selector} [data-tippy-content]`, msg.params);
                     }
-                    if (msg.delayms !== undefined) {
+                    if (msg.params.delayms !== undefined) {
                         setTimeout(() => {
                             tippy(`$${msg.selector} [data-tippy-content]`, msg.params);
-                        }, msg.delayms);
+                        }, msg.params.delayms);
                     } else {
                         tippy(`$${msg.selector} [data-tippy-content]`, msg.params);
                     }

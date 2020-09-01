@@ -7,6 +7,8 @@ from ipycallback import SlowTunnelWidget
 from labext.module import Module, LabExtModuleId
 from string import Template
 
+from labext.modules import JQuery
+
 
 class LabExt(Module):
     """Module that provides basic functions and containers to widget wrappers in the `labext.widgets` packages.
@@ -33,7 +35,7 @@ class LabExt(Module):
 
     @classmethod
     def dependencies(cls) -> List[Type['Module']]:
-        return []
+        return [JQuery]
 
     @classmethod
     def register(cls, use_local: bool = True, suppress_display: bool = False):
@@ -52,13 +54,34 @@ class LabExt(Module):
                 }
             }, timeout);
         }
-        window.$CallUntilTrue = $CallUntilTrue
+        window.$CallUntilTrue = $CallUntilTrue;
     }
     
-    // define a global tunnel
+    // listen to the message from tunnel to execute the javascript from the server
+    $CallUntilTrue(function () {
+        if (window.IPyCallback === undefined || window.IPyCallback.get("$tunnelId") === undefined) {
+            return false;
+        }
+        
+        /** Not allow to execute dynamic code
+        window.IPyCallback.get("$tunnelId").on_receive((version, payload) => {
+            let msg = JSON.parse(payload);
+            let fn = new Function(msg.fn);
+            fn();
+        });
+        */
+        return true;
+    }, 100);
+    
+    // expose jquery to global scope to make it easier to use
+    require(["$jquery"], function (jquery) {
+        window.$container.jquery = jquery;
+    });
             """.strip()).substitute(
             container=cls.container,
-            CallUntilTrue=cls.call_until_true)
+            jquery=JQuery.id(),
+            CallUntilTrue=cls.call_until_true,
+            tunnelId=cls.tunnel.tunnel_id)
 
         Module.registered_modules[cls.id()] = True
         display(cls.tunnel)
