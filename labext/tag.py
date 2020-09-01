@@ -82,6 +82,10 @@ class Tag:
     def label(children: Union[str, 'Tag', List[Union[str, 'Tag']]] = None):
         return Tag("label", children or [])
 
+    @staticmethod
+    def input(children: Union[str, 'Tag', List[Union[str, 'Tag']]] = None):
+        return Tag("input", children or [])
+
     def clear_css(self):
         self._styles = {}
         return self

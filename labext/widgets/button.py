@@ -76,7 +76,7 @@ class HTMLButton(WidgetWrapper):
     def refresh_button(self):
         self.el_btn.value = self.btn.value()
 
-    def on_click(self, callback: Callable[['Button'], None]):
+    def on_click(self, callback: Callable[['HTMLButton'], None]):
         """Register for on click event"""
         self.on_click_callback = callback
         return self
