@@ -64,7 +64,6 @@ class LabExt(Module):
         }
         
         window.IPyCallback.get("$tunnelId").on_receive((version, payload) => {
-            console.log("receive msg");
             let msg = JSON.parse(payload);
             let fn = new Function(msg.fn);
             fn();
