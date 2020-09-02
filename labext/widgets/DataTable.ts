@@ -17,6 +17,8 @@ class LabExtDataTable {
   // caption of the table
   caption?: string;
 
+  // the data table instance. use it for re-drawing the table
+  dataTable?: any;
   isInitComplete: boolean;
 
   constructor(jquery: JQueryStatic,
@@ -71,7 +73,7 @@ class LabExtDataTable {
       .css({"width": "100%"})
       .appendTo(this.$container.empty());
 
-    ($tbl as any).DataTable({
+    this.dataTable = ($tbl as any).DataTable({
       columns: this.columns,
       ajax: (data: any, callback: any, settings: any) => {
         // documentation in here: https://datatables.net/manual/server-side
@@ -107,5 +109,11 @@ class LabExtDataTable {
       },
       ...this.options
     });
+  }
+
+  draw() {
+    // redraw the table: https://datatables.net/reference/api/draw()
+    if (this.dataTable === undefined) return;
+    this.dataTable.draw();
   }
 }

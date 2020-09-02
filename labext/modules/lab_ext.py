@@ -63,13 +63,12 @@ class LabExt(Module):
             return false;
         }
         
-        /** Not allow to execute dynamic code
         window.IPyCallback.get("$tunnelId").on_receive((version, payload) => {
+            console.log("receive msg");
             let msg = JSON.parse(payload);
             let fn = new Function(msg.fn);
             fn();
         });
-        */
         return true;
     }, 100);
     

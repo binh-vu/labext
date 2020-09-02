@@ -6,7 +6,7 @@ with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "README.md"),
     long_description = f.read()
 
 setup(name="labext",
-      version='4.0.34',
+      version='4.1.1',
       packages=find_packages(),
       description="Extra widgets for Jupyter Lab",
       long_description=long_description,

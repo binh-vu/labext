@@ -1,6 +1,8 @@
 from typing import Callable
 from uuid import uuid4
 
+import ujson
+
 from labext.modules import LabExt
 from labext.tag import Tag
 from labext.widget import WidgetWrapper
@@ -9,10 +11,12 @@ import ipywidgets as widgets
 
 class Checkbox(WidgetWrapper):
 
-    def __init__(self, value: bool=False, metadata: dict = None):
+    def __init__(self, value: bool=False, attrs: dict=None, metadata: dict = None):
         self.el_id = "checkbox-" + str(uuid4())
         self.checkbox = Tag.input().attr(
+            id=self.el_id,
             type="checkbox",
+            **(attrs or {}),
             onchange=f"window.IPyCallback.get('{LabExt.tunnel.tunnel_id}').send_msg(JSON.stringify({{ receiver: '{self.el_id}', content: {{ value: event.target.checked }} }}));")
         self.value = value
         if value:
@@ -28,18 +32,17 @@ class Checkbox(WidgetWrapper):
     def widget(self):
         return self.el
 
-    def refresh(self):
-        self.el.value = self.checkbox.value()
-
     def check(self):
-        self.checkbox.attr(checked="1")
-        self.el.value = self.checkbox.value()
         self.value = True
+        LabExt.tunnel.send_msg(ujson.dumps({
+            "fn": f"document.getElementById('{self.el_id}').checked = true;"
+        }))
 
     def uncheck(self):
-        self.checkbox.attr(checked=None)
-        self.el.value = self.checkbox.value()
         self.value = False
+        LabExt.tunnel.send_msg(ujson.dumps({
+            "fn": f"document.getElementById('{self.el_id}').checked = false;"
+        }))
 
     def on_change(self, callback: Callable[['Checkbox'], None]):
         """Register for on click event"""

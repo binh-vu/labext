@@ -222,3 +222,8 @@ class DataTable(WidgetWrapper):
                 self.on_redraw_complete_callback()
             # elif msg == 'init_start':
             #     pass
+
+    def redraw(self):
+        M.LabExt.tunnel.send_msg(ujson.dumps({
+            "fn": f"window.{M.LabExt.container}.DataTable.get('{self.table_id}').draw();"
+        }))
