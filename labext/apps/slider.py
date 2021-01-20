@@ -1,10 +1,10 @@
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 import ipywidgets.widgets as widgets
 from IPython.core.display import display
 
 
-def slider(fn: Callable[[int], Any], min=0, max=10, step=1, clear_output: bool=True) -> None:
+def slider(fn: Callable[[int], Any], min=0, max=10, step=1, id2index: Optional[Callable[[str], Optional[int]]]=None, clear_output: bool=True) -> None:
     """Interactive slider. Useful for navigating a list of items/entities/tables
 
     Parameters
@@ -16,6 +16,7 @@ def slider(fn: Callable[[int], Any], min=0, max=10, step=1, clear_output: bool=T
     max: int
         the stop range of this (inclusive)
     step: int
+    id2index: function
     clear_output: bool
         clear the output before each function call
     """
@@ -40,9 +41,14 @@ def slider(fn: Callable[[int], Any], min=0, max=10, step=1, clear_output: bool=T
     slider = widgets.IntSlider(value=min, min=min, max=max, step=step, continuous_update=False)
     slider.layout.margin = "0 0 0 8px"
 
-    jumper = widgets.Text(
+    index_jumper = widgets.Text(
         value=str(min),
         description=f'Index [{slider.min}, {slider.max}]',
+        disabled=False
+    )
+    id_jumper = widgets.Text(
+        value='',
+        description=f'Enter ID',
         disabled=False
     )
 
@@ -54,7 +60,7 @@ def slider(fn: Callable[[int], Any], min=0, max=10, step=1, clear_output: bool=T
         next_btn.disabled = index == slider.max
         prev_btn.disabled = index == slider.min
         slider.value = index
-        jumper.value = str(index)
+        index_jumper.value = str(index)
 
     def navigate(btn):
         with output:
@@ -70,21 +76,31 @@ def slider(fn: Callable[[int], Any], min=0, max=10, step=1, clear_output: bool=T
             update_index(change['new'])
             fn(change['new'])
 
-    def on_jumper_edit(change):
-        jumper.value = "".join((c for c in change['new'] if c.isdigit()))
+    def on_index_jumper_edit(change):
+        index_jumper.value = "".join((c for c in change['new'] if c.isdigit()))
 
-    def on_jumper_change(_sender):
-        if jumper.value != "":
-            update_index(int(jumper.value))
+    def on_index_jumper_change(_sender):
+        if index_jumper.value != "":
+            update_index(int(index_jumper.value))
+
+    def on_id_jumper_change(_sender):
+        assert id2index is not None
+        idx = id2index(id_jumper.value.strip())
+        if idx is not None:
+            update_index(idx)
 
     next_btn.on_click(navigate)
     prev_btn.on_click(navigate)
     slider.observe(on_slider_change, names='value')
-    jumper.observe(on_jumper_edit, names='value')
-    jumper.on_submit(on_jumper_change)
+    index_jumper.observe(on_index_jumper_edit, names='value')
+    index_jumper.on_submit(on_index_jumper_change)
+    id_jumper.on_submit(on_id_jumper_change)
 
-    container = widgets.HBox([prev_btn, next_btn, slider, jumper])
-    display(container, output)
+    container = [prev_btn, next_btn, slider, index_jumper]
+    if id2index is not None:
+        container.append(id_jumper)
+
+    display(widgets.HBox(container), output)
 
     with output:
         fn(slider.value)
